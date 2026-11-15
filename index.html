@@ -1,0 +1,972 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+</head>
+<body>
+<title>The Vicious Cycle of Hunger</title>
+<meta name="color-scheme" content="dark">
+<script>document.documentElement.setAttribute("data-theme","dark");</script>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700;9..144,800&family=Source+Sans+3:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: radial wheel (conflict loop at the core, SDG band, agent ring stepped by rank, STEEP dots, pillars, a 5x5 interaction grid per agent) beside a reading panel. In Reveal mode the wheel slides left and the loop explodes out to cards on the right. */
+:root{
+  --bg:#F3F5F2; --surface:#FFFFFF; --ink:#16201B; --muted:#5B6862; --line:#D3DAD5; --soft:#E8ECE9;
+  --heat0:#A3122A; --heat1:#DB4B26; --heat2:#EE9634; --heat3:#F3C977;
+  --display:"Fraunces", Georgia, "Times New Roman", serif;
+  --body:"Source Sans 3", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0F1412; --surface:#161D1A; --ink:#E6ECE8; --muted:#97A59E; --line:#2B3531; --soft:#1F2824;
+  --heat0:#F0435B; --heat1:#F0703F; --heat2:#F2A548; --heat3:#F5D58E; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0F1412; --surface:#161D1A; --ink:#E6ECE8; --muted:#97A59E; --line:#2B3531; --soft:#1F2824;
+  --heat0:#F0435B; --heat1:#F0703F; --heat2:#F2A548; --heat3:#F5D58E; color-scheme:dark}
+*{box-sizing:border-box}
+html,body{background:var(--bg);color:var(--ink)}
+body{font-family:var(--body);font-size:15px;line-height:1.45;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 40px}
+.wrap{max-width:1500px;margin:0 auto;display:grid;gap:18px}
+header.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:14px 28px}
+.eyebrow{font:600 12px/1.2 var(--body);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+h1{font:700 clamp(30px,4.2vw,52px)/1.02 var(--display);margin:4px 0 10px;letter-spacing:-.015em;text-wrap:balance}
+.author{font:700 16px/1.2 var(--body);margin-bottom:6px}
+.lede{font-size:17px;line-height:1.5}
+.lede+.lede{margin-top:8px}
+.stats{display:flex;gap:10px 30px;flex-wrap:wrap;margin-top:14px}
+.stats div{display:grid;gap:2px}
+.stats b{font:700 30px/1 var(--display);font-variant-numeric:tabular-nums}
+.stats span{font-size:13px;color:var(--muted)}
+.layout.solo{grid-template-columns:minmax(0,1fr)}
+.layout.solo .panel{display:none}
+.modebar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 14px;border-bottom:1px solid var(--line)}
+.modebar:empty{display:none}
+.zoom button.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.lbadge{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;padding:0 4px;border-radius:11px;color:#fff;font:700 11px/1 var(--body)}
+.lede{margin:0;color:var(--muted);max-width:none}
+header.top>div{flex:1 1 auto;width:85%;max-width:85%}
+@media (max-width:900px){header.top>div{width:100%;max-width:100%}}
+.modes{display:flex;flex-wrap:wrap;gap:6px;background:var(--soft);padding:5px;border-radius:999px}
+.modes button{font:600 14px/1 var(--body);border:0;background:transparent;color:var(--ink);padding:10px 16px;border-radius:999px;cursor:pointer;display:flex;gap:8px;align-items:center}
+.modes button .n{font:600 11px/1 var(--body);color:var(--muted)}
+.modes button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.modes button[aria-pressed="true"] .n{color:var(--bg);opacity:.7}
+button:focus-visible,select:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 390px;gap:18px;align-items:start}
+@media (max-width:1020px){.layout{grid-template-columns:minmax(0,1fr)}}
+.stage{background:var(--surface);border:1px solid var(--line);border-radius:14px;position:relative;min-width:0;overflow:clip}
+.tools{display:flex;flex-wrap:wrap;gap:10px 14px;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid var(--line);position:sticky;top:env(safe-area-inset-top,0px);z-index:6;background:var(--surface);border-radius:14px 14px 0 0}
+#hint{order:3;flex-basis:100%}
+.tools .modes{order:1}.tools .zoom{order:2}
+.modes button{font-size:15px;padding:11px 18px}
+.hint{font-size:13px;color:var(--muted)}
+.zoom{display:flex;gap:4px}
+.zoom button{width:32px;height:32px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:8px;cursor:pointer;font:600 16px/1 var(--body)}
+.zoom button.wide{width:auto;padding:0 10px;font-size:13px}
+svg#wheel{display:block;width:100%;height:auto;aspect-ratio:1/1;max-height:88vh;touch-action:none;cursor:grab}
+svg#wheel.wide{aspect-ratio:2830/1840}
+svg#wheel:active{cursor:grabbing}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px 18px 20px;min-width:0;position:sticky;top:max(12px,env(safe-area-inset-top,0px));max-height:calc(100vh - 24px);overflow:auto}
+@media (max-width:1020px){.panel{position:static;max-height:none}}
+.panel h2{font:700 24px/1.1 var(--display);margin:4px 0 8px;letter-spacing:-.01em;text-wrap:balance}
+.panel h3{font:600 12px/1.2 var(--body);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:20px 0 8px}
+.panel p{margin:0 0 10px}
+.src{color:var(--muted);font-size:13px}
+.tagrow{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 4px}
+.pill{display:inline-flex;align-items:center;gap:6px;font:500 12.5px/1 var(--body);padding:5px 9px;border-radius:999px;background:var(--soft);color:var(--ink)}
+.pill.off{opacity:.45;text-decoration:line-through}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:0}
+.sw{display:inline-block;width:12px;height:12px;border-radius:3px;flex:none}
+.stat{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;align-items:baseline;margin:8px 0}
+.stat b{font:700 22px/1 var(--display);font-variant-numeric:tabular-nums}
+.conn{list-style:none;padding:0;margin:0;display:grid;gap:2px}
+.conn li>button,.conn li>div{all:unset;display:grid;grid-template-columns:14px 1fr;gap:3px 10px;padding:8px 6px;border-radius:8px;width:100%;box-sizing:border-box}
+.conn li>button{cursor:pointer}
+.conn li>button:hover,.conn li>button:focus-visible{background:var(--soft)}
+.conn .sw{margin-top:3px}
+.conn .nm{font-weight:600}
+.conn .rt{grid-column:2;color:var(--muted);font-size:13.5px}
+.lv{font:600 11px/1 var(--body);padding:3px 6px;border-radius:4px;margin-left:6px;vertical-align:1px;color:#1b1a14}
+.lv.dk{color:#fff}
+.ptag{font:600 10.5px/1 var(--body);letter-spacing:.08em;text-transform:uppercase;padding:3px 6px;border-radius:4px;background:var(--ink);color:var(--bg);margin-left:6px;vertical-align:1px}
+.chip{font:500 13px/1.2 var(--body);border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:8px 11px;border-radius:12px;cursor:pointer;text-align:left}
+.chip small{display:block;color:var(--muted);font-size:12px;margin-top:2px}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.chip[aria-pressed="true"] small{color:var(--bg);opacity:.75}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.btn{font:600 14px/1 var(--body);border:0;background:var(--ink);color:var(--bg);padding:11px 16px;border-radius:10px;cursor:pointer}
+.btn.ghost{background:transparent;color:var(--ink);box-shadow:inset 0 0 0 1px var(--line)}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+select{font:500 14px/1.2 var(--body);padding:9px 10px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);max-width:100%}
+.steps{display:grid;gap:8px;margin-top:6px}
+.steprow{display:grid;grid-template-columns:62px 1fr;gap:10px;align-items:center}
+.steprow .k{font:600 12px/1 var(--body);color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.steprow .sq{display:flex;flex-wrap:wrap;gap:3px;align-items:center}
+.steprow .sq i{width:14px;height:14px;border-radius:3px;display:block}
+.steprow.dim{opacity:.3}
+.cmp{display:grid;grid-template-columns:1fr auto;gap:4px 10px;padding:10px 0;border-top:1px solid var(--line)}
+.cmp .v{font:700 18px/1 var(--display);font-variant-numeric:tabular-nums;white-space:nowrap}
+.cmp .v s{color:var(--muted);font-weight:500;text-decoration:none;margin-right:4px}
+.bars{grid-column:1/-1;display:grid;gap:3px}
+.bars span{height:6px;border-radius:4px;background:var(--soft);overflow:hidden;display:block}
+.bars i{display:block;height:100%;border-radius:4px}
+.note{font-size:13px;color:var(--muted);border-left:3px solid var(--line);padding-left:10px;margin-top:14px}
+.verdict{font:600 16px/1.35 var(--body);margin:12px 0 6px}
+.legend{display:flex;flex-wrap:wrap;gap:8px 20px;padding:10px 14px;border-bottom:1px solid var(--line);font-size:13px;color:var(--muted);align-items:center}
+.legend .grp{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center}
+.legend .it{display:flex;align-items:center;gap:6px}
+.legend button.it{all:unset;display:flex;align-items:center;gap:6px;cursor:pointer;padding:3px 5px;border-radius:6px}
+.legend button.it:hover,.legend button.it:focus-visible{background:var(--soft);color:var(--ink)}
+.insights h2{font:700 22px/1.1 var(--display);margin:6px 0 10px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+.card{all:unset;box-sizing:border-box;cursor:pointer;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 14px 16px;display:grid;gap:6px;align-content:start}
+.card:hover,.card:focus-visible{border-color:var(--ink)}
+.card[aria-pressed="true"]{box-shadow:inset 0 0 0 2px var(--ink)}
+.card .big{font:800 30px/1 var(--display);font-variant-numeric:tabular-nums}
+.card .t{font-weight:600}
+.card .d{color:var(--muted);font-size:13.5px}
+.tip{position:fixed;z-index:20;pointer-events:none;max-width:320px;background:var(--ink);color:var(--bg);padding:10px 12px;border-radius:9px;font-size:13px;line-height:1.38;box-shadow:0 6px 20px rgba(0,0,0,.18)}
+.tip b{display:block;font-size:14px;margin-bottom:3px}
+.tip .m{opacity:.75}
+.foot{color:var(--muted);font-size:12.5px}
+/* svg */
+.t-ink{fill:var(--ink)} .t-muted{fill:var(--muted)}
+.guide{fill:none;stroke:var(--line);stroke-dasharray:3 5}
+.ag{transition:opacity .3s}
+.focus .ag:not(.on){opacity:.18}
+.focus .cell:not(.hl){opacity:.15}
+.ag .segp{stroke:var(--surface);stroke-width:1.5;cursor:pointer}
+.ag.sel .segp{stroke:var(--ink);stroke-width:3.5}
+.ag .lab{font:500 17px var(--body);fill:var(--ink);cursor:pointer}
+.ag .idt{font:600 14px var(--body);pointer-events:none}
+.sd.no{fill:none;stroke:var(--muted);stroke-opacity:.55;stroke-width:1}
+.sd.lead{stroke:var(--ink);stroke-width:1.6}
+.pm.no{fill:none;stroke:var(--muted);stroke-opacity:.6;stroke-width:1}
+.pm.yes{fill:var(--ink)}
+.cell{stroke:var(--surface);stroke-width:1;cursor:pointer;transition:opacity .25s}
+.cell.empty{fill:var(--soft)}
+.selfc{fill:var(--ink)}
+.band{cursor:pointer}
+.bandt{font:700 12.5px var(--body);letter-spacing:.09em;fill:#fff;pointer-events:none}
+.bandt.dk{fill:#1b1a14}
+.disc{fill:var(--bg);stroke:var(--line)}
+.looplink{fill:none;stroke:var(--ink);stroke-width:3.4}
+.looplink.hit{stroke:transparent;stroke-width:16;cursor:pointer}
+.looplink.dead{stroke:var(--muted);stroke-dasharray:5 6;stroke-width:2}
+.looplbl{font:500 12.5px var(--body);fill:var(--muted);pointer-events:none}
+.arrowhead{fill:var(--ink)}
+.tok{cursor:pointer}
+.tok circle.c{stroke:var(--bg);stroke-width:3}
+.tok text{font:700 14px var(--body);pointer-events:none}
+.tok .nm{font:600 13px var(--body);fill:var(--ink)}
+.tokring{fill:none;stroke:var(--ink);stroke-width:2.5;stroke-dasharray:4 3}
+.exl{fill:none;stroke-width:4;stroke-linecap:round}
+.exdot{stroke:var(--surface);stroke-width:3}
+.xcard{font-family:var(--body);color:var(--ink);background:var(--surface);border:3px solid var(--line);border-radius:24px;padding:18px 28px;height:100%;box-sizing:border-box;overflow:hidden}
+.xcard .k{font:600 26px/1.2 var(--body);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.xcard .h{font:800 52px/1.05 var(--display);margin:4px 0 8px;letter-spacing:-.01em}
+.xcard .d{font:400 37px/1.22 var(--body)}
+.tcard{font-family:var(--body);color:var(--ink);background:var(--surface);border:3px solid var(--line);border-radius:24px;padding:26px 34px 30px;box-sizing:border-box}
+.tcard .k{font:600 23px/1.25 var(--body);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.tcard .h{font:800 48px/1.06 var(--display);margin:8px 0 18px;letter-spacing:-.01em}
+.tcard .ln{font:400 33px/1.3 var(--body);margin:0 0 14px}
+.tcard .ln b{display:block;font:700 21px/1.2 var(--body);letter-spacing:.1em;text-transform:uppercase;margin-bottom:3px}
+.tcard .dt{border-top:2px solid var(--line);margin-top:22px;padding-top:16px}
+.tcard .dt b{display:block;font:700 21px/1.2 var(--body);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.tcard ul{margin:0;padding-left:30px}
+.tcard li{font:400 27px/1.32 var(--body);color:var(--muted);margin-bottom:8px}
+.opp{border-left:8px solid var(--c);background:var(--soft);border-radius:0 18px 18px 0;padding:20px 26px 10px;margin:4px 0 6px}
+.opp .ol{font:700 21px/1.2 var(--body);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.opp .ot{font:700 34px/1.25 var(--body);margin:0 0 12px}
+.opp .om{font:400 27px/1.32 var(--body);color:var(--muted);margin:0 0 10px}
+.opp .om b{color:var(--ink);font-weight:600}
+.tcard .h{margin:10px 0 8px}
+.tcard .sub{font:400 26px/1.35 var(--body);color:var(--muted);margin:0 0 34px}
+.tcard .ot{font:500 36px/1.32 var(--body);border-left:6px solid;padding:2px 0 2px 24px;margin:0 0 34px}
+.tcard .meta{display:grid;gap:24px;margin:0 0 38px;font:400 28px/1.38 var(--body)}
+.tcard .ml,.tcard .secl{display:block;font:700 19px/1.2 var(--body);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.tcard .secl{border-top:2px solid var(--line);padding-top:30px;margin-bottom:20px}
+.tcard .ln{font:400 29px/1.38 var(--body);margin:0 0 22px}
+.tcard .ln b{color:var(--muted);font-size:18px}
+.tcard .rtog{all:unset;cursor:pointer;font:600 22px/1 var(--body);color:var(--muted);border:2px solid var(--line);border-radius:999px;padding:14px 24px;margin-top:8px}
+.tcard .rtog:hover,.tcard .rtog:focus-visible{color:var(--ink);border-color:var(--ink)}
+.tcard .rlist{margin:24px 0 0;padding-left:30px}
+.tsent b{color:var(--muted)}
+.tcard .dt.sec{margin-top:18px;margin-bottom:10px;padding-top:16px}
+.panel .opp{border-left-width:4px;padding:12px 14px 4px;border-radius:0 10px 10px 0;margin:10px 0}
+.panel .opp .ol{font-size:11.5px}.panel .opp .ot{font-size:16px}.panel .opp .om{font-size:13.5px}
+.tnav{display:flex;flex-wrap:nowrap;gap:6px;align-items:center;margin:0 0 20px;padding-bottom:18px;border-bottom:2px solid var(--line)}
+.tnav button{all:unset;cursor:pointer;box-sizing:border-box;min-width:46px;height:46px;padding:0 6px;border-radius:23px;display:inline-flex;align-items:center;justify-content:center;font:700 21px/1 var(--body);color:var(--c,var(--ink));border:2px solid var(--line)}
+.tnav button.tprev,.tnav button.tnext{font-size:34px;color:var(--ink)}
+.tnav button.tnext{margin-left:6px}
+.tnav button.tprev{margin-right:6px}
+.tnav button:hover,.tnav button:focus-visible{border-color:var(--ink)}
+.tnav button.on{background:var(--c);color:#fff;border-color:var(--c)}
+.tpgrp{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.tpgrp .lbl{font:600 12px/1 var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-right:2px}
+.chip .num{font-weight:700;margin-right:5px}
+.star{color:#C9922A}
+.tsent{margin:0 0 10px}
+.tsent b{display:block;font:600 11.5px/1.2 var(--body);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:2px}
+.tdata{margin:0;padding-left:18px;color:var(--muted);font-size:13.5px}
+.tdata li{margin-bottom:6px}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="wrap">
+  <header class="top" style="align-items:flex-start">
+    <div>
+      <div class="author">Tanaya Deo</div>
+      <div class="eyebrow">SBIZ 750 · Ecosystem map · Prof. Tom Hardy · Fall 2026</div>
+      <h1>The Vicious Cycle of Hunger</h1>
+      <p class="lede">Hunger isn't caused by one thing, so this map shows the forces behind it and how they push on each other. At the centre is the UN's Sustainable Development Goal 2, Zero Hunger. Around it sit four other UN goals most closely tied to it: No Poverty and Clean Water decide how much hunger there is, and Good Health and Responsible Consumption feel its effects. Each goal holds five "agents", the forces and institutions my research found shaping hunger, such as armed conflict, food prices and school meals. The small coloured grid beside each agent shows how it affects every other one, from red (−2, makes hunger worse) to dark teal (+3, the two improve together).</p>
+      <p class="lede"><b style="color:var(--ink)">What I found:</b> five agents (armed conflict, extreme weather, food prices, fragile governments and unsafe water) keep making each other worse, so hunger keeps coming back even after help arrives. The tabs on the map walk through it. <b style="color:var(--ink)">Vicious cycle</b> shows how those five feed each other. <b style="color:var(--ink)">Shock</b> follows a single drought as it spreads through the whole system. <b style="color:var(--ink)">Turning points</b> proposes twelve practical responses, from solar cold rooms in food markets to drought insurance for farmers, each with the research showing where it has already worked.</p>
+      <div class="stats"><div><b>5</b><span>SDGs</span></div><div><b>25</b><span>agents</span></div><div><b>121</b><span>interactions</span></div><div><b>94</b><span>make hunger worse</span></div></div>
+    </div>
+  </header>
+
+  <div class="layout solo" id="layout">
+    <section class="stage" aria-label="Ecosystem wheel">
+      <div class="tools">
+        <nav class="modes" aria-label="Map mode">
+          <button id="m-explore" data-mode="explore" aria-pressed="true"><span class="n">1</span>Explore</button>
+          <button id="m-loop" data-mode="loop" aria-pressed="false"><span class="n">2</span>Vicious cycle</button>
+          <button id="m-shock" data-mode="shock" aria-pressed="false"><span class="n">3</span>Shock</button>
+          <button id="m-turn" data-mode="turn" aria-pressed="false"><span class="n">4</span>Turning points</button>
+        </nav>
+        <span class="hint" id="hint">Hover an agent or a grid cell. Click to read the research. Scroll or use the buttons to zoom.</span>
+        <div class="zoom">
+          <button id="z-in" aria-label="Zoom in">+</button>
+          <button id="z-out" aria-label="Zoom out">−</button>
+          <button id="z-reset" class="wide">Reset view</button>
+          <button id="p-toggle" class="wide" aria-expanded="false" aria-controls="panel">Show details</button>
+        </div>
+      </div>
+      <div class="legend" id="legend"></div>
+      <div class="modebar" id="modebar"></div>
+      <svg id="wheel" viewBox="-830 -830 1660 1660" role="img" aria-label="Radial ecosystem map of SDG 02 and four connected SDGs"></svg>
+    </section>
+    <aside class="panel" id="panel" aria-live="polite"></aside>
+  </div>
+
+  <section class="insights">
+    <div class="eyebrow">What the map shows</div>
+    <h2>Findings from the research</h2>
+    <div class="cards" id="cards"></div>
+  </section>
+  <p class="foot">Sources: UN DESA SDG Report 2025; FAO; Global Report on Food Crises 2025; WFP; ILO; World Bank; UN Women; WHO/UNICEF JMP; UNECE; UNEP; IFPRI; Nature (2024); Nature Food (2021). Interactions come from my Class 10–11 interaction matrix (v2, SDG 12 revised). Interaction levels are my draft reading of each rationale: what the first agent does to the second, judged by whether it moves the system toward or away from Zero Hunger.</p>
+</div>
+<div class="tip" id="tip" hidden></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<script>
+(function(){
+const PAIRS = [["A1", "A6", -2, "", "Conflict closes schools and cuts supply routes, so meal delivery collapses where it is needed most."], ["A2", "A6", -1, "", "Droughts and floods push families to lean on school meals as a safety net; programmes scale up after shocks."], ["A3", "A6", -2, "", "Food price spikes raise the cost per meal and shrink how many children a fixed budget can feed."], ["A6", "A4", 2, "", "Home-grown school feeding buys from local smallholders, giving them a stable market."], ["A2", "A1", -2, "conflict", "Climate shocks deepen resource competition that fuels conflict; conflict strips people of the means to cope with shocks."], ["A1", "A3", -2, "conflict", "War disrupts trade and markets, driving price spikes (e.g. the 2022 grain shock after the invasion of Ukraine)."], ["A1", "A4", -2, "", "Conflict displaces farmers, destroys fields and blocks access to inputs and markets."], ["A2", "A3", -2, "climate", "Weather extremes cut harvests, tightening supply and pushing food prices up."], ["A2", "A4", -2, "", "Rain-fed smallholders carry the most direct exposure to droughts, floods and heat."], ["A3", "A4", -1, "", "Food and input prices set smallholder incomes; spikes help net sellers and hurt net buyers."], ["A9", "A10", -1, "", "Fragile states carry some of the most unsustainable debt loads."], ["A9", "A7", -2, "fiscal", "Debt service squeezes the fiscal space for social protection."], ["A10", "A8", -1, "", "Informal work dominates employment in fragile states."], ["A8", "A12", -1, "", "Women are over-represented in the lowest-paid informal work."], ["A8", "A7", -1, "", "Informal workers fall outside contribution-based social insurance."], ["A10", "A7", -2, "", "Fragile states have the weakest social protection coverage."], ["A7", "A12", 2, "", "Cash transfers are often paid to women, directly targeting the gender poverty gap."], ["A13", "A14", -2, "", "Irrigation is the main driver of groundwater depletion."], ["A14", "A15", -1, "", "Many utilities draw on aquifers; falling water tables raise costs and cut supply."], ["A14", "A17", -1, "", "Shared aquifers cross borders and need joint governance."], ["A14", "A18", -2, "", "Falling water tables dry up nearby wells, lengthening collection trips."], ["A13", "A15", -1, "", "Agriculture and cities compete for the same water."], ["A13", "A17", -2, "", "Upstream irrigation dams and diversions are the core of transboundary disputes."], ["A15", "A18", 2, "water", "Without piped water, households depend on women and girls to collect it."], ["A20", "A19", -2, "", "Ultra-processed food displaces breastfeeding and nutrient-dense diets in young children."], ["A21", "A19", -1, "", "Out-of-pocket costs delay treatment of malnutrition."], ["A22", "A19", 2, "", "Community health workers screen for and treat child wasting."], ["A23", "A19", -2, "water", "Diarrhoea and undernutrition feed each other: sick children absorb fewer nutrients."], ["A20", "A21", -1, "", "Diet-related disease raises long-term out-of-pocket health spending."], ["A22", "A23", 2, "", "Health workers treat diarrhoea with ORS and zinc; shortages raise deaths."], ["A9", "A6", -2, "fiscal", "Debt servicing crowds out education budgets, so school meals get cut or handed to donors."], ["A10", "A6", -1, "", "Fragile states have the lowest school-meal coverage and depend on external agencies to run them."], ["A6", "A12", 2, "", "Meals and take-home rations raise girls' enrolment and attendance, narrowing the gender gap."], ["A6", "A7", 3, "", "School meals are one of the most widespread social protection instruments."], ["A1", "A10", -2, "conflict", "Ongoing armed conflict is what defines a state as fragile and conflict-affected."], ["A1", "A7", -2, "", "Conflict breaks registries, payment systems and offices that social protection runs on."], ["A2", "A9", -1, "climate", "Disaster recovery is often debt-financed, adding to sovereign debt burdens."], ["A2", "A8", -1, "", "Informal outdoor and farm workers lose income in extreme weather with no insurance or sick pay."], ["A2", "A10", -2, "", "Fragile states are among the most climate-exposed and least able to adapt."], ["A7", "A2", 1, "climate", "Shock-responsive social protection scales cash transfers when droughts or floods hit."], ["A9", "A3", -1, "", "Debt pressure weakens currencies, making imported food more expensive."], ["A3", "A8", -2, "", "Informal workers spend most of their income on food and have no wage indexation against inflation."], ["A3", "A7", -1, "fiscal", "Inflation erodes the real value of cash transfers unless they are indexed."], ["A4", "A8", -1, "", "Smallholder farming is the largest single source of informal employment in low-income countries."], ["A12", "A4", -1, "", "Women farmers lack land titles and credit, a core driver of the gender poverty gap."], ["A7", "A4", 2, "", "Cash transfers let smallholders invest in inputs instead of selling assets in bad years."], ["A15", "A6", 2, "", "Schools need safe water to cook meals and run handwashing; no water means no safe meal."], ["A18", "A6", -1, "", "Girls who spend hours collecting water miss school and the meals served there."], ["A1", "A13", -2, "", "Conflict destroys canals, pumps and irrigation schemes."], ["A1", "A15", -2, "", "Water utilities are targeted or collapse in war, cutting supply to whole cities."], ["A17", "A1", -1, "", "Disputes over shared rivers and dams are a recurring trigger of regional tension."], ["A2", "A14", -2, "climate", "Droughts push farmers to pump harder, accelerating groundwater decline."], ["A13", "A2", 1, "", "Irrigation buffers crops against erratic rain; heat raises crop water demand."], ["A2", "A15", -2, "", "Floods damage treatment plants and droughts dry up sources utilities rely on."], ["A2", "A17", -1, "", "Droughts strain river-sharing agreements when there is less water to divide."], ["A2", "A18", -2, "", "Drought lengthens trips to find water, adding hours to collection."], ["A13", "A3", 2, "", "Irrigated land produces more stable yields, damping price volatility."], ["A14", "A4", -2, "", "Smallholders in South Asia rely on shallow wells that fail first as water tables drop."], ["A13", "A4", 2, "", "Access to irrigation is the biggest yield gap between smallholders and larger farms."], ["A18", "A4", -1, "", "In farming households women and girls carry water for home and livestock, cutting time for farm work."], ["A6", "A19", 2, "", "School meals improve micronutrient intake and reduce undernutrition in school-age children."], ["A6", "A20", 1, "", "Nutrition standards for school meals decide whether children eat whole or ultra-processed food."], ["A1", "A19", -2, "", "Conflict zones hold the highest rates of child wasting."], ["A1", "A22", -2, "", "Health workers flee or are attacked, and clinics shut."], ["A1", "A23", -2, "conflict", "Damaged water systems in conflict trigger cholera and diarrhoeal outbreaks."], ["A2", "A19", -2, "", "Drought and flood years show spikes in child wasting."], ["A2", "A23", -2, "climate", "Floods contaminate water sources and spread diarrhoeal disease."], ["A3", "A19", -2, "", "When food prices rise, families cut diet quality first, raising child undernutrition."], ["A3", "A20", -1, "", "Ultra-processed food is often the cheapest calorie when fresh food prices spike."], ["A4", "A19", -1, "", "Child stunting is highest in rural smallholder households."], ["A1", "A27", -2, "", "Conflict destroys storage and power, breaking the cold chain."], ["A2", "A27", -1, "", "Heatwaves raise spoilage and the energy needed to keep food cold."], ["A27", "A3", 2, "storage", "Cold chains cut post-harvest loss, keeping more supply on the market and prices steadier."], ["A28", "A3", -1, "", "Subsidies distort what food costs and which crops get grown."], ["A27", "A4", 2, "storage", "Without cold storage, smallholders lose perishable harvests or sell at distress prices."], ["A28", "A4", -1, "", "Subsidies flow mostly to larger farms and shape which inputs smallholders use."], ["A9", "A15", -1, "", "Debt service limits public investment in water infrastructure."], ["A10", "A15", -2, "", "Fragile states have the lowest coverage of safely managed water."], ["A10", "A17", -1, "", "Weak institutions struggle to negotiate and enforce shared-water agreements."], ["A18", "A12", -2, "water", "The water-collection burden falls on women and girls, deepening the gender poverty gap."], ["A9", "A21", -2, "fiscal", "Low public health spending under debt pressure pushes costs onto households."], ["A9", "A22", -1, "", "Debt service constrains hiring and paying health workers."], ["A8", "A21", -1, "", "Informal workers rarely have health insurance, so care is paid out of pocket."], ["A10", "A19", -2, "", "Fragile states carry the highest child undernutrition rates."], ["A10", "A22", -2, "", "Fragile states have the deepest health workforce shortages."], ["A12", "A19", -2, "water", "Mothers' income and education are among the strongest predictors of child nutrition."], ["A7", "A19", 2, "", "Cash transfers and child grants reduce stunting."], ["A7", "A21", 2, "", "Fee waivers and subsidised health insurance cut out-of-pocket costs."], ["A28", "A7", 1, "fiscal", "Repurposing farm subsidies is a proposed route to fund social protection."], ["A15", "A23", 3, "", "Utilities determine whether water is safe; failure drives diarrhoeal disease."], ["A18", "A19", -2, "water", "Hours spent collecting water cut time for feeding and childcare."], ["A18", "A23", -1, "water", "Water carried from unsafe sources and stored at home is often contaminated."], ["A28", "A14", -2, "fiscal", "Free or subsidised farm electricity drives over-pumping of groundwater."], ["A28", "A13", -1, "", "Irrigation and energy subsidies make water-intensive crops artificially cheap to grow."], ["A28", "A20", -1, "", "Subsidised corn, sugar and soy make ultra-processed ingredients cheap."], ["A27", "A23", 1, "", "A broken cold chain causes foodborne diarrhoeal illness."], ["A1", "A31", -2, "storage", "Conflict destroys grain stores and blocks transport, so harvests rot or are abandoned."], ["A2", "A31", -2, "climate", "Humid harvests stop farmers sun-drying grain, raising mould and storage losses."], ["A31", "A3", -1, "", "Losses tighten supply; harvest gluts crash farm-gate prices, then prices spike in the lean season."], ["A31", "A4", -2, "storage", "Without safe storage, smallholders sell early at low prices or lose stored grain to pests and mould."], ["A3", "A32", -2, "", "Poor urban households buy most of their food here, so price shocks reach them first."], ["A32", "A4", 2, "", "Informal traders are the main sales channel for smallholder produce."], ["A33", "A3", -1, "", "World fertiliser prices rose 80% in 2021, feeding into food price inflation."], ["A33", "A4", -2, "", "Smallholders face input-cost squeezes, overuse where inputs are subsidised, and pesticide poisoning (44% of farmers each year)."], ["A10", "A31", -2, "", "Fragile states have the weakest storage, roads and extension services; sub-Saharan Africa loses 23% of food after harvest."], ["A31", "A12", -1, "", "Women do about half of post-harvest processing but rarely control sales, so losses fall on their labour and income."], ["A8", "A32", -1, "", "Market traders and street vendors are almost all informally employed."], ["A32", "A12", 1, "", "Women dominate street vending: 83% of Ghana's street vendors are women."], ["A7", "A32", -1, "", "Traders fall outside sick pay and pensions, and means-tested cash transfers often miss them."], ["A15", "A32", 1, "", "Most informal markets lack piped water and toilets."], ["A33", "A14", -2, "", "Nitrate leaches into aquifers: 56% of India's districts exceed the 45 mg/L safe limit."], ["A13", "A33", -1, "", "Intensive irrigated systems carry the heaviest fertiliser loads and runoff."], ["A33", "A15", -1, "", "Utilities pay to treat nitrate- and pesticide-polluted water sources."], ["A33", "A17", -1, "", "Nutrient runoff travels down shared rivers, turning farm pollution into a cross-border issue."], ["A31", "A19", -2, "", "Mould in poorly stored maize exposes children to aflatoxin, which is associated with stunting."], ["A32", "A20", -1, "", "Vendors increasingly sell packaged snacks and sugary drinks alongside fresh food."], ["A23", "A32", -2, "", "Unsafe water and handling spread foodborne diarrhoea; Lusaka shut markets during its 2018 cholera outbreak."], ["A27", "A31", 3, "storage", "Cold storage is the main tool for cutting losses of perishable produce after harvest."], ["A31", "A32", -1, "", "Produce spoiled in transport and open-air markets is part of post-harvest loss."], ["A27", "A32", 2, "storage", "Without refrigeration, vendors lose perishables every day and cannot sell fish, meat or dairy safely."], ["A28", "A33", -2, "fiscal", "India's fertiliser subsidy (Rs 1.67 lakh crore in 2025–26) keeps urea cheap and overused."]]; // [from, to, level, pattern, rationale]
+
+const SDG = {
+  "02":{name:"Zero Hunger",short:"ZERO HUNGER",col:"#DDA63A",dk:true,center:-90,role:"Primary SDG",rank:null,
+        head:["645M people chronically undernourished (2025)","2.1B moderately or severely food insecure","About 1 in 12 people faced hunger in 2024"],
+        lead:"Political",leadWhy:"Conflict is the main driver of hunger in 20 countries, ahead of weather (18) and economic shocks (15).",pillars:4,src:"UN DESA; GRFC 2025"},
+  "03":{name:"Good Health & Well-being",short:"GOOD HEALTH",col:"#4C9F38",dk:false,center:-18,role:"Affected by SDG 02 (outbound)",rank:3,
+        head:["Malnutrition, including child stunting and wasting, is written into SDG 02's own targets."],lead:"Social",pillars:2,src:"FAO"},
+  "12":{name:"Responsible Consumption & Production",short:"RESP. CONSUMPTION",col:"#BF8B2E",dk:true,center:54,role:"Affected by SDG 02 (outbound)",rank:1,
+        head:["13.3% of food is lost between harvest and retail (2023)","1.05B tonnes of food wasted (2022)"],lead:"Social",pillars:4,src:"FAO 12.3.1; UNEP"},
+  "06":{name:"Clean Water & Sanitation",short:"CLEAN WATER",col:"#26BDE2",dk:true,center:126,role:"Affects SDG 02 (inbound)",rank:2,
+        head:["Agriculture accounts for about 72% of global freshwater withdrawals."],lead:"Environmental",pillars:4,src:"UN SDG Report 2025"},
+  "01":{name:"No Poverty",short:"NO POVERTY",col:"#E5243B",dk:false,center:198,role:"Affects SDG 02 (inbound)",rank:3,
+        head:["FAO calls the poverty → affordability → access link central to SDG 02."],lead:"Economic",pillars:2,src:"FAO"}
+};
+const SDG_ORDER = ["02","03","12","06","01"];
+const STEEP = ["S","T","Ec","En","P"];
+const STEEP_NAME = {S:"Social",T:"Technological",Ec:"Economic",En:"Environmental",P:"Political"};
+const STEEP_COL = {S:"#8E5BD3",T:"#2F7FC1",Ec:"#D9961A",En:"#2E9B57",P:"#5D6675"};
+const LEVELS = [3,2,1,-1,-2];
+const LV = {
+  "3":{n:"Indivisible",col:"#17666A",dk:true,d:"The two work as one: progress in one carries the other."},
+  "2":{n:"Reinforcing",col:"#4FA99C",dk:true,d:"Strongly helps the other agent work against hunger."},
+  "1":{n:"Enabling",col:"#BFE0DA",dk:false,d:"Creates better conditions for the other agent."},
+  "-1":{n:"Constraining",col:"#F0AE98",dk:false,d:"Limits the other agent and nudges the system toward hunger."},
+  "-2":{n:"Counteracting",col:"#C8402A",dk:true,d:"Works hard against the other agent and deepens hunger."}
+};
+const lvTag=s=>`<span class="lv${LV[s].dk?" dk":""}" style="background:${LV[s].col}">${s>0?"+":"−"}${Math.abs(s)} ${LV[s].n}</span>`;
+
+const AG = [
+ ["A6","School meals","National school meal programmes","02",3,1,"Safety Nets & Food Assistance","466M children receive school meals; 99% of the $84B funding comes from national budgets.","WFP, State of School Feeding 2024","S,Ec,P","P"],
+ ["A1","Armed conflict","Armed conflict","02",2,2,"Conflict & Fragility","Main driver of acute food insecurity in 20 countries; 295.3M people faced acute food insecurity in 2024.","GRFC 2025 (FSIN/GNAFC)","S,Ec,En,P","P"],
+ ["A2","Weather extremes","Weather extremes (drought, floods)","02",2,3,"Climate & Natural Resources","Main driver in 18 countries, affecting 96M+ people in 2024.","GRFC 2025","S,T,Ec,En,P","En"],
+ ["A3","Food prices","Food price inflation & economic shocks","02",1,4,"Markets, Prices & Household Income","Main driver in 15 countries, affecting 59M+ people in 2024.","GRFC 2025","S,T,Ec,En,P","Ec"],
+ ["A4","Smallholder farmers","Smallholder farmers","02",1,5,"Food Producers & Agriculture","Five of six farms are under 2 ha; they work about 12% of farmland yet grow roughly 35% of the world's food.","FAO 2021","S,T,Ec,En,P","Ec"],
+ ["A9","Sovereign debt","Sovereign debt servicing","01",3,1,"Government Policy & Public Finance","3.4B people live in countries that spend more on interest than on health or education; debt service reached $921B.","UN / UNCTAD 2025","Ec,En,P","Ec"],
+ ["A8","Informal work","Informal employment","01",2,2,"Markets, Prices & Household Income","2B workers (61% of the employed) work informally, without social protection; 85.8% in Africa.","ILO","S,T,Ec,P","Ec"],
+ ["A10","Fragile states","Fragile & conflict-affected states","01",2,3,"Conflict & Fragility","421M people in 39 fragile economies live on under $3 a day, projected to be nearly 60% of the extreme poor by 2030.","World Bank 2025","S,Ec,En,P","P"],
+ ["A12","Gender poverty gap","Gender poverty gap","01",1,4,"Gender Equity","351M women and girls projected to remain in extreme poverty in 2030.","UN Women, Gender Snapshot 2025","S,T,Ec,En,P","S"],
+ ["A7","Social protection","Social protection systems","01",1,5,"Safety Nets & Food Assistance","Only 52.4% of people have at least one social protection benefit.","ILO, World Social Protection Report 2024–26","S,T,Ec,P","P"],
+ ["A14","Groundwater","Groundwater depletion","06",3,1,"Climate & Natural Resources","Groundwater is falling in 71% of ~1,700 aquifers studied, fastest in dry, farmed regions.","Jasechko et al., Nature 2024","S,T,Ec,En,P","P"],
+ ["A13","Irrigation","Irrigated agriculture","06",2,2,"Food Producers & Agriculture","Agriculture took 72% of global freshwater withdrawals in 2022.","UN SDG Report 2025","S,T,Ec,En,P","En"],
+ ["A15","Water utilities","Drinking-water utilities & infrastructure","06",2,3,"Infrastructure & Technology","2.1B people lack safely managed drinking water.","WHO/UNICEF JMP","S,T,Ec,En,P","Ec"],
+ ["A17","Shared-water rules","Transboundary water governance","06",1,4,"Conflict & Fragility","153 countries share rivers, lakes or aquifers; only 24 have arrangements covering all of them.","UNECE SDG 6.5.2 report 2024","T,Ec,En,P","P"],
+ ["A18","Water collectors","Women & girls as water collectors","06",1,5,"Gender Equity","Women and girls mainly collect water in most countries with data, often 30+ minutes a day.","WHO/UNICEF JMP 2025","S,T,Ec,En","S"],
+ ["A19","Child undernutrition","Child undernutrition (stunting & wasting)","03",3,1,"Health & Disease","150.2M children under 5 were stunted in 2024.","UNICEF/WHO/World Bank JME","S,T,Ec,En,P","S"],
+ ["A20","Ultra-processed food","Ultra-processed food & food marketing","03",2,2,"Consumer Behaviour & Food","Obesity (9.4%) now exceeds underweight (9.2%) among 5–19-year-olds.","UNICEF","S,T,Ec,P","Ec"],
+ ["A21","Health costs","Out-of-pocket health costs","03",2,3,"Markets, Prices & Household Income","1.3B people pushed into or deeper into poverty by paying for care.","WHO / World Bank","S,T,Ec,P","Ec"],
+ ["A22","Health workforce","Health workforce","03",1,4,"Work & Livelihoods","WHO projects an 11.1M health-worker shortfall by 2030.","WHO","S,T,Ec,P","S"],
+ ["A23","Unsafe WASH","Unsafe WASH & diarrhoeal disease","03",1,5,"Health & Disease","Linked to 1.4M deaths a year.","WHO","S,T,Ec,En,P","En"],
+ ["A31","Post-harvest loss","Post-harvest loss","12",3,1,"Food Supply Chain & Loss","13.3% of food is lost between harvest and retail, 23% in sub-Saharan Africa; grain losses there could feed 48M people.","FAO 12.3.1 (2023); World Bank & FAO 2011","S,T,Ec,En,P","T"],
+ ["A27","Cold chain","Cold chain infrastructure","12",2,2,"Infrastructure & Technology","526M tonnes of food (12% of production) lost each year for lack of refrigeration.","FAO & UNEP 2022","T,Ec,En,P","T"],
+ ["A32","Informal markets","Informal food markets & vendors","12",2,3,"Markets, Prices & Household Income","70% of urban households in Africa regularly buy food from street vendors.","IFPRI 2017; WIEGO","S,T,Ec,En,P","Ec"],
+ ["A28","Farm subsidies","Harmful agricultural subsidies","12",1,4,"Government Policy & Public Finance","$540B a year in producer support, 87% of it price-distorting.","FAO, UNDP & UNEP 2021","S,Ec,En,P","P"],
+ ["A33","Agrochemicals","Agrochemical overuse","12",1,5,"Food Producers & Agriculture","Only 46% of applied nitrogen reaches crops; pesticides cause ~385M acute poisonings a year.","Zhang et al., Nature Food 2021; BMC Public Health 2020","S,T,Ec,En,P","En"]
+].map(r=>({id:r[0],short:r[1],name:r[2],sdg:r[3],rank:r[4],pri:r[5],cat:r[6],find:r[7],src:r[8],steep:r[9].split(","),lead:r[10]}));
+const A = Object.fromEntries(AG.map(a=>[a.id,a]));
+
+const PATTERNS = {
+  conflict:{name:"Conflict loop",d:"Climate shocks and conflict feed each other; conflict turns hunger into fragility and disease."},
+  climate:{name:"Climate cascade",d:"Weather rarely stays environmental. It shows up as price spikes, new debt and storage losses."},
+  fiscal:{name:"Fiscal squeeze",d:"Debt and subsidies decide what governments can spend on meals, cash transfers and health care."},
+  water:{name:"Water → women → children",d:"No piped water means hours of collection for women and girls, less time for feeding, and unsafe water for children."},
+  storage:{name:"Storage bottleneck",d:"Without safe storage, smallholders sell at harvest-time lows or lose grain to pests and mould."}
+};
+
+// ---------- derived ----------
+const LINKS = PAIRS.map((p,i)=>({i,a:p[0],b:p[1],s:p[2],tag:p[3],txt:p[4]}));
+const NB = {}; AG.forEach(a=>NB[a.id]=new Set());
+const LK = {}; const key=(x,y)=>x<y?x+"|"+y:y+"|"+x;
+LINKS.forEach(l=>{NB[l.a].add(l.b);NB[l.b].add(l.a);LK[key(l.a,l.b)]=l;});
+const linkOf=(x,y)=>LK[key(x,y)];
+AG.forEach(a=>{a.deg=NB[a.id].size; a.per={}; SDG_ORDER.forEach(s=>a.per[s]=0); NB[a.id].forEach(n=>a.per[A[n].sdg]++);
+  a.pillars=["S","Ec","En"].every(p=>a.steep.includes(p)); a.lv={}; LEVELS.forEach(v=>a.lv[v]=0);
+  LINKS.forEach(l=>{if(l.a===a.id||l.b===a.id)a.lv[l.s]++;});
+  a.outNeg=LINKS.filter(l=>l.a===a.id&&l.s<0).length; a.inNeg=LINKS.filter(l=>l.b===a.id&&l.s<0).length; a.pos=LINKS.filter(l=>(l.a===a.id||l.b===a.id)&&l.s>0).length;});
+const LOOP = ["A1","A2","A3","A10","A23"];
+AG.forEach(a=>a.loopLinks=LOOP.filter(x=>x!==a.id&&NB[a.id].has(x)).length);
+const pairCount={}; LINKS.forEach(l=>{const k=[A[l.a].sdg,A[l.b].sdg].sort().join("-");pairCount[k]=(pairCount[k]||0)+1});
+const pc=(x,y)=>pairCount[[x,y].sort().join("-")]||0;
+const NEG=[]; LINKS.forEach(l=>{if(l.s<0){const w=0.35*Math.abs(l.s);NEG.push([l.a,l.b,w,l],[l.b,l.a,w,l]);}});
+const negNB={}; AG.forEach(a=>negNB[a.id]=new Set()); LINKS.forEach(l=>{if(l.s<0){negNB[l.a].add(l.b);negNB[l.b].add(l.a);}});
+
+// ---------- geometry ----------
+const R_DISC=236, R_BAND0=244, R_BAND1=270, R_SEG0=276, R_STEP=[0,350,376,402], R_DOT=418, R_PIL=440, R_GRID0=458, ROWH=24, R_LAB=590;
+const SECT=72, PAD=2.8;
+const order = {"02":["A3","A1","A6","A2","A4"],"01":["A12","A8","A9","A10","A7"],"06":["A17","A13","A14","A15","A18"],"03":["A22","A20","A19","A21","A23"],"12":["A28","A27","A31","A32","A33"]};
+SDG_ORDER.forEach(s=>{const c=SDG[s].center, s0=c-SECT/2+PAD, w=(SECT-2*PAD)/5; SDG[s].a0=s0; SDG[s].a1=s0+w*5;
+  order[s].forEach((id,k)=>{const a=A[id]; a.a0=s0+k*w+0.35; a.a1=s0+(k+1)*w-0.35; a.ang=(a.a0+a.a1)/2; a.col=k;});});
+const rad=d=>d*Math.PI/180;
+function labR(a){const t=document.querySelector("#ag-"+a.id+" .lab");let L=130;try{L=t.getComputedTextLength()||L;}catch(e){}return R_LAB+L+18;}
+const P=(r,deg)=>[r*Math.cos(rad(deg)), r*Math.sin(rad(deg))];
+const arcD=(r0,r1,a0,a1,cr=3)=>d3.arc().innerRadius(r0).outerRadius(r1).startAngle(rad(a0+90)).endAngle(rad(a1+90)).cornerRadius(cr)();
+const TGT={A2:[-122,-8],A1:[122,-8],A3:[0,-126],A10:[-82,120],A23:[82,120]};
+const LOOP_LINKS=[["A2","A1",true,"feed each other","Climate shocks deepen competition for land and water that fuels conflict; conflict strips people of the means to cope with the next shock."],
+ ["A2","A3",false,"cut harvests","Weather extremes cut harvests, tightening supply and pushing food prices up."],
+ ["A3","A1",false,"fuel unrest","War disrupts trade and markets, and price spikes deepen unrest: the two drive each other."],
+ ["A1","A10",false,"","Ongoing armed conflict is what makes a state fragile and conflict-affected."],
+ ["A10","A2",false,"","Fragile states are among the most climate-exposed and least able to adapt."],
+ ["A1","A23",false,"","Damaged water systems in conflict trigger cholera and diarrhoeal outbreaks."],
+ ["A2","A23",false,"","Floods contaminate water sources and spread diarrhoeal disease."]];
+
+// ---------- state ----------
+const st={tp:0,mode:"explore",sel:null,keep:null,shock:{origin:"A2",step:-1,timer:null},story:0,timers:[]};
+
+// ---------- svg scaffold ----------
+const svg=d3.select("#wheel");
+const defs=svg.append("defs");
+defs.append("marker").attr("id","arr").attr("viewBox","0 0 10 10").attr("refX",9).attr("refY",5).attr("markerWidth",5.5).attr("markerHeight",5.5).attr("orient","auto-start-reverse")
+  .append("path").attr("d","M0,0L10,5L0,10z").attr("class","arrowhead");
+const vp=svg.append("g").attr("id","vp");
+const zoom=d3.zoom().scaleExtent([1,7]).on("zoom",e=>vp.attr("transform",e.transform));
+svg.call(zoom).on("dblclick.zoom",null);
+d3.select("#z-in").on("click",()=>svg.transition().duration(300).call(zoom.scaleBy,1.5));
+d3.select("#z-out").on("click",()=>svg.transition().duration(300).call(zoom.scaleBy,1/1.5));
+d3.select("#z-reset").on("click",()=>svg.transition().duration(450).call(zoom.transform,d3.zoomIdentity));
+const world=vp.append("g").attr("id","world");   // wheel (slides left in Reveal mode)
+const gGuide=world.append("g"), gBand=world.append("g"), gAg=world.append("g"), gDisc=world.append("g"), gSDG=world.append("g"), gCore=world.append("g").attr("display","none"), gShock=world.append("g");
+const gStory=vp.append("g").attr("id","story");
+
+// rank guides + SDG-interaction row labels, repeated in every gap between SDGs
+const GAPS=SDG_ORDER.map(x=>SDG[x].center+36);
+[1,2,3].forEach(k=>gGuide.append("circle").attr("class","guide").attr("r",R_STEP[k]));
+function radialText(g,r,ang,txt,opts){const p=P(r,ang);let rot=ang,anchor="start";const nr=((ang%360)+360)%360;if(nr>90&&nr<270){rot=ang+180;anchor="end";}
+  return g.append("text").attr("transform",`translate(${p[0]},${p[1]}) rotate(${rot})`).attr("text-anchor",anchor).attr("dominant-baseline","middle").attr("font-size",opts.size||11).attr("font-weight",opts.w||600).attr("class",opts.cls||"t-muted").text(txt);}
+GAPS.forEach(G=>{
+  [1,2,3].forEach(k=>{const p=P(R_STEP[k]-11,G);gGuide.append("text").attr("x",p[0]).attr("y",p[1]).attr("text-anchor","middle").attr("dominant-baseline","middle").attr("class","t-muted").attr("font-size",11.5).attr("font-weight",700).text("+"+k);});
+  SDG_ORDER.forEach((x,i)=>{const p=P(R_GRID0+i*ROWH+ROWH/2-1,G);gGuide.append("text").attr("x",p[0]).attr("y",p[1]).attr("text-anchor","middle").attr("dominant-baseline","middle").attr("font-size",11).attr("font-weight",800).attr("fill",SDG[x].col).text(x);});
+  radialText(gGuide,R_GRID0+5*ROWH+6,G,"SDG interactions",{size:10.5,w:600});
+  radialText(gGuide,R_SEG0-1,G,"",{});
+});
+{const p=P(R_STEP[3]+12,GAPS[4]);radialText(gGuide,R_STEP[3]+5,GAPS[4],"agent rank",{size:10,w:600});}
+
+// SDG bands
+SDG_ORDER.forEach(s=>{const d=SDG[s];
+  gBand.append("path").attr("class","band").attr("d",arcD(R_BAND0,R_BAND1,d.a0,d.a1)).attr("fill",d.col)
+    .on("click",e=>{e.stopPropagation();zoomSector(s);showSDG(s);setPanel(true);})
+    .on("mouseenter",e=>tip(e,`<b>SDG ${s} ${d.name}</b>${d.role}${d.rank?` · rank +${d.rank}`:""}<br><span class="m">Click to zoom in.</span>`)).on("mousemove",moveTip).on("mouseleave",hideTip);
+  const bottom=d.center>0&&d.center<180, r=(R_BAND0+R_BAND1)/2;
+  const p0=P(r,bottom?d.a1:d.a0), p1=P(r,bottom?d.a0:d.a1), pid="bp"+s;
+  defs.append("path").attr("id",pid).attr("d",`M${p0[0]},${p0[1]}A${r},${r} 0 0 ${bottom?0:1} ${p1[0]},${p1[1]}`);
+  gBand.append("text").attr("class","bandt"+(d.dk?" dk":"")).attr("dominant-baseline","central").append("textPath").attr("dominant-baseline","central").attr("href","#"+pid).attr("startOffset","50%").attr("text-anchor","middle")
+    .text(`SDG ${s} · ${d.short}${d.rank?" · +"+d.rank:""}`);
+});
+
+// agents
+const ags=gAg.selectAll("g.ag").data(AG).join("g").attr("class","ag").attr("id",a=>"ag-"+a.id);
+ags.append("path").attr("class","segp").attr("d",a=>arcD(R_SEG0,R_STEP[a.rank],a.a0,a.a1));
+ags.append("text").attr("class","idt").attr("text-anchor","middle").attr("dominant-baseline","middle")
+  .attr("transform",a=>{const r=(R_SEG0+R_STEP[a.rank])/2,p=P(r,a.ang);let rot=a.ang+90; if(a.ang>0&&a.ang<180) rot-=180; return `translate(${p[0]},${p[1]}) rotate(${rot})`}).text(a=>a.id);
+const cellData=[];
+ags.each(function(a){const g=d3.select(this), w=(a.a1-a.a0);
+  STEEP.forEach((f,k)=>{const ang=a.a0+w*(k+0.5)/5, p=P(R_DOT,ang), has=a.steep.includes(f), lead=a.lead===f;
+    if(lead){g.append("circle").attr("cx",p[0]).attr("cy",p[1]).attr("r",10.5).attr("fill",STEEP_COL[f]).attr("stroke","var(--surface)").attr("stroke-width",1.5);
+      g.append("text").attr("x",p[0]).attr("y",p[1]+0.5).attr("text-anchor","middle").attr("dominant-baseline","middle").attr("font-size",f.length>1?9:10.5).attr("font-weight",800).attr("fill","#fff").style("pointer-events","none").text(f);}
+    else g.append("circle").attr("class","sd"+(has?" yes":" no")).attr("cx",p[0]).attr("cy",p[1]).attr("r",has?4.4:3.2).attr("fill",has?STEEP_COL[f]:"none");});
+  ["S","Ec","En"].forEach((f,k)=>{const ang=a.ang+(k-1)*w*0.2, p=P(R_PIL,ang), has=a.steep.includes(f);
+    g.append("rect").attr("class","pm "+(has?"yes":"no")).attr("x",p[0]-3.8).attr("y",p[1]-3.8).attr("width",7.6).attr("height",7.6).attr("rx",1.2).attr("transform",`rotate(${ang+45},${p[0]},${p[1]})`);});
+  // 5x5 interaction grid: rows = partner SDG, columns = partner position in its sector
+  SDG_ORDER.forEach((s,ri)=>{order[s].forEach((pid,ci)=>{
+    const r0=R_GRID0+ri*ROWH, r1=r0+ROWH-2, c0=a.a0+w*ci/5, c1=a.a0+w*(ci+1)/5;
+    if(pid===a.id){const p=P((r0+r1)/2,(c0+c1)/2);g.append("circle").attr("class","selfc").attr("cx",p[0]).attr("cy",p[1]).attr("r",2.6);return;}
+    const l=linkOf(a.id,pid);
+    const cd={row:a.id,col:pid,l};cellData.push(cd);
+    g.append("path").datum(cd).attr("class","cell"+(l?"":" empty")).attr("d",arcD(r0,r1,c0,c1,1.5)).attr("fill",l?LV[l.s].col:null);
+  });});
+  const p=P(R_LAB,a.ang); let rot=a.ang, anchor="start"; const nr=((a.ang%360)+360)%360; if(nr>90&&nr<270){rot=a.ang+180;anchor="end";}
+  g.append("text").attr("class","lab").attr("text-anchor",anchor).attr("dominant-baseline","middle").attr("transform",`translate(${p[0]},${p[1]}) rotate(${rot})`).text(a.short);
+});
+const cells=gAg.selectAll("path.cell");
+cells.on("mouseenter",(e,d)=>{e.stopPropagation(); if(!d.l){tip(e,`<b>${A[d.row].short} · ${A[d.col].short}</b><span class="m">No interaction in the matrix.</span>`);return;}
+    const l=d.l; tip(e,`<b>${A[l.a].short} → ${A[l.b].short}</b>${lvTag(l.s)}<br>${l.txt}`);})
+  .on("mousemove",moveTip).on("mouseleave",hideTip)
+  .on("click",(e,d)=>{e.stopPropagation(); if(d.l){showPair(d.l);setPanel(true);}});
+ags.on("mouseenter",(e,a)=>{hoverAgent(a.id,true);const R=st.mode==="shock"&&st.shock.R;tip(e,(R&&R.dist[a.id]!==undefined?`<div style="margin-bottom:4px"><b>${R.dist[a.id]===0?"Origin":"Wave "+R.dist[a.id]} · pressure ${Math.round(R.p[a.id])}</b></div>`:"")+agentTip(a));})
+   .on("mousemove",moveTip)
+   .on("mouseleave",(e,a)=>{hoverAgent(a.id,false);hideTip();})
+   .on("click",(e,a)=>{e.stopPropagation(); agentClick(a.id);});
+svg.on("click",()=>{if(st.mode==="explore"){clearSel();showDefault();}});
+
+function agentTip(a){const lv=LEVELS.filter(v=>a.lv[v]).map(v=>`<span class="lv${LV[v].dk?" dk":""}" style="background:${LV[v].col};margin:0 4px 0 0">${v>0?"+":"−"}${Math.abs(v)} ×${a.lv[v]}</span>`).join("");
+  return `<b>${a.id} ${a.name}</b><span class="m">SDG ${a.sdg} · rank +${a.rank} · ${a.cat}</span><br>${a.find}<div style="margin:6px 0 2px;display:flex;gap:4px;align-items:center;flex-wrap:wrap">${STEEP.map(f=>a.steep.includes(f)?`<span class="lbadge" style="background:${STEEP_COL[f]};${f===a.lead?"outline:2px solid #fff":"opacity:.8"}">${f}</span>`:"").join("")}<span class="m" style="margin-left:4px">lead: ${STEEP_NAME[a.lead]}</span></div><br><div style="margin-top:5px">${lv}</div>`;}
+
+// ---------- conflict loop core (always visible) ----------
+gDisc.append("circle").attr("class","disc").attr("r",R_DISC);
+gCore.append("text").attr("y",-196).attr("text-anchor","middle").attr("class","t-muted corecap").attr("font-size",12.5).attr("font-weight",700).attr("letter-spacing","0.14em").text("THE VICIOUS CYCLE");
+gCore.append("text").attr("y",-178).attr("text-anchor","middle").attr("class","t-muted corecap").attr("font-size",11.5).text("at the core of SDG 02");
+const coreCap=gCore.append("text").attr("y",184).attr("text-anchor","middle").attr("class","t-muted corecap").attr("font-size",12);
+coreCap.append("tspan").attr("x",0).text("Conflict breaks states and water systems;");
+coreCap.append("tspan").attr("x",0).attr("dy",15).text("floods spread disease; fragile states");
+coreCap.append("tspan").attr("x",0).attr("dy",15).text("can’t absorb the next shock.");
+const gLinks=gCore.append("g");
+function loopPath(x,y){const p=TGT[x],q=TGT[y];const dx=q[0]-p[0],dy=q[1]-p[1],L=Math.hypot(dx,dy),ux=dx/L,uy=dy/L,r=31;
+  const s=[p[0]+ux*r,p[1]+uy*r],e=[q[0]-ux*(r+3),q[1]-uy*(r+3)],c=[(s[0]+e[0])/2-uy*16,(s[1]+e[1])/2+ux*16];
+  const mx=(s[0]+e[0])/2,my=(s[1]+e[1])/2,ox=mx-0,oy=my-30,ol=Math.hypot(ox,oy)||1;
+  return {d:`M${s[0]},${s[1]}Q${c[0]},${c[1]} ${e[0]},${e[1]}`,m:[mx+ox/ol*22,my+oy/ol*22]};}
+const loopEls=LOOP_LINKS.map(([x,y,both,lbl,why])=>{const lp=loopPath(x,y);
+  const vis=gLinks.append("path").attr("class","looplink").attr("d",lp.d).attr("marker-end","url(#arr)").attr("marker-start",both?"url(#arr)":null);
+  const t=gLinks.append("text").attr("class","looplbl").attr("x",lp.m[0]).attr("y",lp.m[1]).attr("text-anchor","middle").attr("dominant-baseline","middle").text(lbl);
+  gLinks.append("path").attr("class","looplink hit").attr("d",lp.d).on("mouseenter",ev=>tip(ev,`<b>${A[x].short} ${both?"↔":"→"} ${A[y].short}</b>${why}`)).on("mousemove",moveTip).on("mouseleave",hideTip);
+  return {x,y,vis,t};});
+const toks=gCore.selectAll("g.tok").data(LOOP).join("g").attr("class","tok").attr("transform",id=>`translate(${TGT[id]})`)
+  .on("mouseenter",(e,id)=>tip(e,agentTip(A[id]))).on("mousemove",moveTip).on("mouseleave",hideTip)
+  .on("click",(e,id)=>{e.stopPropagation(); setMode("explore"); agentClick(id);});
+toks.append("circle").attr("class","c").attr("r",31).attr("fill",id=>SDG[A[id].sdg].col);
+toks.append("text").attr("text-anchor","middle").attr("dominant-baseline","middle").style("fill",id=>SDG[A[id].sdg].dk?"#1b1a14":"#fff").text(id=>id);
+const NMP={A3:[40,0,"start"],A2:[0,46,"middle"],A1:[0,46,"middle"],A10:[0,46,"middle"],A23:[0,46,"middle"]};
+toks.append("text").attr("class","nm").attr("dominant-baseline","middle").attr("text-anchor",id=>NMP[id][2]).attr("x",id=>NMP[id][0]).attr("y",id=>NMP[id][1]).text(id=>A[id].short);
+toks.append("circle").attr("class","tokring").attr("r",38).attr("display","none");
+function tokColour(fn){toks.select("circle.c").attr("fill",id=>fn?fn(id):SDG[A[id].sdg].col);
+  toks.select("text").style("fill",id=>fn?"#fff":(SDG[A[id].sdg].dk?"#1b1a14":"#fff"));}
+
+
+// ---------- centre in Explore + Shock: the primary SDG ----------
+const SDG2_ICON="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAWgAAAFoCAIAAAD1h/aCAABCaElEQVR42u29eZykWVXnfc69zxJPrBm5VmVVdS1da3cVTXf1Rle3jYDSAoIvoqAiKuCMgw64MLgBOoOKy6ujAoOKM6AOCCqg7HRD7/ta3dW171mVlXtm7BHPcu+ZP57IrSrjiayKyNryfD/R/cmKeCJuxPM893fPOffcc/HoF+8AhmGY80HwKWAYhoWDYRgWDoZhWDgYhmHhYBiGhYNhGIaFg2EYFg6GYVg4GIZh4WAYhoWDYRiGhYNhGBYOhmFYOBiGYeFgGIaFg2EYhoWDYRgWDoZhWDgYhmHhYBiGhYNhGBYOhmEYFg6GYVg4GIZh4WAYhoWDYZhlh3HZfBOc/0/ia8MwLBznCoVAQAIA0EAaSNGshCCgmH8AXZJv2OwIqn+xpkeSbvKZRIvTSgQUOP8bLPq9DHMFCwciCiJNQVUrDwBQWmg4wkiAkNO9zKegpv0y6AAA0IihtAEQSF3E70naL0d3SBQmCgtAk1+myCOFjAFKIKWDyoInBFCiMBAlNVRJBBSkXFIukCIgBARAEIYwYoDGxT05DAvHRdUMSdpXXgHNuN25xe7aYXdus9JrpZ0VVhKFVe+yqqa8gqpOeIUT7sTe2vjLfvEE6UCYybD7Lb1oEEorvmIHoFxYOwhAiKA84hdPobRjvTehtBqrDHpTh5RXlHYm1nHj/MMQdKCDinLzqjqhvBwaMZSxs38jCtI++VUzucbuut5M9gs7A1oF1XE/f6w2uV97eWGlZ+0ahlnqvnz0i3dcHM0AAO0WZLw3te6e5Lp7Yl3XLTI0S6pWG3uxeOwbpVP3a78srNTSGueIpDwj0X/Nm/4VhRlxYP7gF0ef+piZXLXmjV+SdjbiyMF731MZejyx5tX9r/l0A+umGpQGK8NPFo581csfE1ZqrndDyhVWquuG9yWv+SFhpc96s1c4kdv/T4UjXxVGnH0W5iqyOFCQ9kH56c0/2bn9PUZi5YwkUBjRmFaW2fG8/h8hAMqYs+I2Z8Vtmdy7pl78dOnU94WZBMQlDnwQKRfrFgfOlT8gIFA4R/VIe0AERCAQCADOHfk1ANaPQTo7EkwkzLiV3WRlN6Wv/bGxZ/64ePxbwkoBKQAE7Qsz2f+Dn7I7t9ZPGmlESUBAGoVhpdf13vYRM9E/sfsT8xSHYZYMcTFUQ7lCxvru+tPe2z5sJFYCqfrNjRJRhnFQCD328IHTwVGUdWeBNJC2OzatuPsvem79XdIBabWI4GVrX1xagAJmvmG9OQQMv6RQtYk5AYiZ5xHCrz3vIeZIz9xHPXgRyg9RIKxU3x0fc3pvJL8cNqqDavdNv253biXtAxCgRGESEKKsG0SkiVR2+3vi/bu0X1rq08IwS29xoCDlSSu98gc/YXduI1IIAlCe76dMD/UaADKbf9JI9I888t9ABw1jEC0GOISh3dyZ779v5vMRpfaKHdvfnVzzGtIKhSTtlwcfQWnPGeE1gFS1ybFnPk7KAxTT3w394mmUFk2bSEQaUZROPTC5+xMylpVOd2bzO5zeGxEQKAA0Oq5/99ADvyJQaL9iZ7ck190DpBENANB+eWL3X1VHnhfSSm95R3rDmwEBiQCoY9s7K0OP8z3NXOnCgUAaEfvu+jO7cxvpAIXRogwBAOkgserO3js+NvLIh9BILI1Xj6T92ujzcz6aEKWdWT/jStXGXvJyR4Th0HyPiYJa+fTDFFTnipowE3N0pP4Jyp1yJ/YKO6ODamXwkdX3fN7KrA/NEKfnBiOxQntFUq6z8nYU4aQJAcj8wX+eevl/G06PVp775H+PdV5vdVwbfmen55Vmck1QGUFhcrCDuWJdFRTaK3a+8gNO741tUI3ZTzVIB8lrXtdx/bu1l8Pztl8W2w6aCWEmhJmQVgpBxPvvNNPrAXRo/pROfY+Ud07eGgCisJLCSs19LOg+IBpoxNGIG063dgvl0/cDQChDwkoZ8T7SPqCws5vrSoMCAKqjzwk7C9KWVppUUB17YTogRGg4VmYdKW9ewIhhriThQKH9Unzlqzq2vgNIoZBt/WwJpDt3/KKV3aKD6lJ59aSnH0TaT6x5NQCQ1ohS+5XK4GNoOAtHImffOP1o0ED4ahiv8cvDAICIdZWQMSCNwpROD9T1CYFI+2WcfiOAVm5ujqMERrwPSCGwcDBXqHAQoTA6X/kr8wOBzd+2WFcCCKWd3f7uhYf9drstMt6T6L9z5qnqyLN+cUBIu50ewXyXB8NnUEgzOe8gHcz8XiKaUSWq+0QpvqeZK1Y4QnOj/85Y9w4gvaiM7HrKUxgEVU07JKIAoOSa11nZTRRUl9A4R6GDqtN3s3S6gTSiAIDywH0A1FCvZmZhZudiGoeBAMNJXyPeO+2qYD1vdWYeh2GWTYwDMxvfCrCITK1QWVACAGkfAABl2HmaGAKkUVrJNa8mVcOlnVem5JrXhcM9oFBurjL8FJ4TFp21CfyS9uoP8itR5hUpoEC5OZSxxOq7Z1wVVZsKKsMoOcbJXKYsxawKknKtzDpnxc2zSQqRquHljhaO/Js7eUD7ZTTiTt/OjuveJa3MvOSrBQZrBID4yl1Tez9HsERZT0jaNRL98ZW3zTxVOfN4UB6RdoYWCl6gYcdXvoqUByAAgYKqO7m/gdFkoBmXdtbKbs5e93N2dgsAEREi1sZeDKrj0k6T8vkeZZaFcCAKHdScvpvray4iZj1IA4ryqQdGHvsd5ZeEtAAEAFWHn6qcebT/NZ+WsSwQNXRDEAHAym4y4n1BdXwp5iARhfar8XW3CytN035KaeA+ELjQqjYBADLWtfLuv5x5yi+eHvjm286a+gn/mbzmtc6KW4QRF1ZqJkyBwiCtpvZ+FoXB1gazjFyVMF/K6b1pMR6KXzw98sRHibQR60QjjoaNhmMkVtTG9kzs/mQzhwUBSJhJM7WG9JLMQYYJmslrXjfzhYPycG30BSHjUQnv4ZSHDoA0BdWG395wjHifsFL16RUAIAoqIyOP/VZtfA8aceLkcWYZxThICTNhZbdM9+0ohckf+pJ2c8KIkQ7CiU8gTcqTsY7y6QeC6higaNJFAczkKtCq/UFERFKumVrr9O6cea48+JCqTaAwohQtjIkKo/7/RbUlgAAQR5/4veKxbwo7zcvkmWXlqiBp34j3GYkVM97EwqqBkpRbOfMoGg6d20nQULUpd2KfsfruMJW7kfYggHR6AAjb7aggCB1U46vuRCNG06ko5YHvgzAbVN8gAFTV8ZHHf3dOjKOG50R5Qq+nMvjI+PN/4ay4teeW3wYAAo0grezmytATSMRuCrOchAMRtG/Ee4QRj7I4iADRyx31S2dQWOfaFAgApP3SaYgOkAIAgLTSS9HPCDRKe9pPIUD08sdq4y+LRnlfYQKn9mpjL1FQBTQACBBR2gseGVTHamMvKjfXueM/y1gnEAFCfOWr8vv/L3F4g1l2MQ7SMtY140dE+Cle4TgFtcbTLhQRIJinMtLGtgc4UFBQszo22l3bZ6SsfOp+7RebJbkjmnE0E2jG0Yyj4TQ+0BB2Vnul2sTemediXdcb8T7QPqdvMMtIOBAQSMt6sRmKkg2AoDwEoDH68y4ZSMpNrLo7nOZAIYFU+fSDKG1aTGZK83zz8DRQuJqubqyRFlba7rpeR+kpw1yNFkc40wHNpkMAQLn5SGlAYcYX1V5YqKLNP0KjEU9c85oZoatN7ncnD4VLSNrZijBrY7sBCFGEkuSsuAVI4RwL7vwcLIa5MoUDFjlahqnijcKMgGjE+xZjdSg3vwR+SjXWdZ3dsTmMUwBAaeB7pKrYZkOA0LC9/LGgPDzzQ53em4WZJFKACKS0X5jrBs2b0EGc8ZvqWuwV+J5mrljhWOxw6zV+TQkzYabWRjss9d5SHQUUbR1qkbSXWP1qQCStwhrLlcHH0IjXl7fXH9hQNxe5XIUA0VRurja+Z+Y5M7POzKwLCxeSDoLyMEzHXQFQWCmisAmJgDLWOfdSBpURCKsKMsyVJxxERKrpo3G3RdKekeg309c0sV9QAIBXONnmUmAUCCudWP2DM09Uhp5wJ14GUuSXtF8mv6L9coOFuRS+OvcR5d0gAFE1DHMAEClE6fTcNFNWw53YNy2RBADxvtu0m4OgptwpNJxY74310BKi9st+/jhKC3gyl1lilmKtCqFhY1hPtGFvkQCAYuEtBRCEDlyn7xYUZtiRGvvzqNy8Xzwl2thb6pVEdpnpawAo1CY/fzzWc8NsKWAiEFLVpvziwFnFL1BYsZ4bSLlztAz94oD2ywubTqRRWrXxPeEvDfXUWXFb7sDngRQaTmX4aR1URX1OlzJb3q7cXGX4SSHtjm0/a6XXAVBY1bk6+pxfGuR6xcyVJxxEGqVTGXqSlEs6aGjME6GQtYmXF4w1hgkUqfVvgJka6A1cHUDpTu5X1TE0E+3qLQgIOrAy6+o/ByUAdFz3cx3X/dxZRxaPf2P4kd+Udsdc80063f2v/ZuzjjzzwK/4xYGF4yNEKG2/cMIvnrLS68JfG+vebjg9yi8Kw/YLJ4pH/yOz5R2kfUQDpd114/u74L9Oy1C4kxsCQG7fPy5ZPTSGWVqLg1Da7sTe2uhzkStNEIDQcBYwOlBorxRftWuRtTwqZx4l7QvANlvnC9QEoTmdXSFEbA1FZ5lFTWamUWo3546/ZKXXERCSlrFOu3NbefBhEJYwE5Mv/i+7c1us54ZQLokUoiAiAEJhhJtCTu7+RHXkWWFxrjpzJbsqIiLxaY55srCrgiJ7/bubvhtQUlAtDz6KhtP+ZfUopkvszBW7mW9ozDhcs3/Mmld4zrvm/b/+sXM1EbE68mxqw5vrnwwQX/mq8ukHAACE1ModevD92R3/KbX+DdLOhpbLTGte7vDU3s8Wj397eisWhllyLtZObov9OlJ7+eTaH15x1581MTdIAcrSqQeGH/o1aaXaupAUiQIj1mUkVjRc1E8EiMrN+aVBFKaVWY/CbHAwAaBfGFBeQVopM7023NAJEFUt55fP4PTGMWg4Vmb9zKvaK/nFgXqgBEW4U6SR6Lc7t5rJ1dJKEylVm/TyR8M6JhzaYJaxcAAAwOp7/snKrA8rbkYGOMTQg+8vn35EWMl29xkkHZD2IiIsBITCCF0tUm50aBalFe56S8o79+0zYkTKnX0VJUprfuxFkPJI1WDWUkMUBhrORdpSl2GW0lW50M6KUtWmOm/4JSuzYTEVgNyJfZUzT4r2hUXneVvCQBm1cez0ZpAEANjULwu7OgqczoWt1yKe66khznt1+sPnKJVCYaBMzZUzqlc8Z9VglqdwoNBB1cpu7Lju5xdV3xhgat9nSXvCsJdmDTqdx/zu4pUr+sjmn0PAK+6Zy4DLaCUV6aD7pt8QZmJ20G0Y3RDVkWfKA/eLNkc3GIa5goQDpXbz6Y0/Fl91Z6gLUUMuIGl/4oW/4nXnDLOMhQMFqZqZWtN14wdmMjWjoxv5g/9cG3sRjQTPIzDMsrU4kJTXffOHpN0xkwTZWDWkXzg5ueczPPvIMMtXOBCldvOpDW9OrL6bmjgpdfEYe+7PtF+sF+ZjGGb5CQdq7RqJvu4b3w9ATXZjIwUo8oe/Ujn9kDA5sZphlq1woCC/2nXjr4bbskZtjBI6KaUzk7s/KcwkOykMs1yFA6X28olrXpda/waKTvcCCL2S8Wc+rtyppdixjWGYK0I4ELQv7Wz3zt8AIIycWQ1lJX/438qnH5R2mthJYZhlKhwotF/qfOUvm8lVzRazaUTpF09NvvAJYSZJs5PCMJeeS5FyjlL7xXj/rszGt4XBi+ZOyrN/qrz8RS82gfPCLmctLYl4dZ4OnpO6fpZKzsRrEGenos8N4sx918IhHgTEc5ax0MJuXdPZq3oTGFGKiR1GFo6L66SQEka8++YPAWKT9SBznBRhZy+yapD2Sftz5M7C2TlgJAoo8Ob0RHMm+EJ+ZaZc8DmLXIGC6kyaPCKijNU/UHmkAwBAFChjZ3VLCiozi1SEtM/u+ShB+9qvzak/hIBSGDYI6+zzRlpH7nQ1/a3OPgNzDhAgDBQGgmhUVIVh4Whrd0Sp3Mmunb++uCWw0i+emtz9iYs+k4JAgZnsN+J9YSdHFH7xlKpNQFhohwIj1mWm1sy8GlRGgvIQoAQUsZ4bQJjhVinKK/j543P6Odmd1wnTISJE1EHNyx0JP9BMrTWcTgDQftnLHTkrUcXu2iGm94LyckcoqE5/JgKAdnNGvNdZcauZukbGsgCkajm/OOBO7gvKI8JKzVYhI42G43TviLCytHa93BHSgZlYYSRWzl8NhABae0Xl5lR1QitXmAkQBs9zsXAsdWijGOu9sWPrOxexBJYAaPzZP1FuPqxbcxHVTSivnNrw5uz1vzDz5OhTHysc+tewwqjyKsn1b+y97SMzr07t/ezE8/9TWGmU1spX/6Wo72UHleGnh77/X9CMT1c51r23f8Tq2BS+6hcHTn3rp8KIT8d170pv+NHQJBn41juC8tDceuUrdv2RkewP/z79nXe5k/vQcIAIQJPys9vfm9ny9nAbmrkE1bHC4S9P7f0cCgEgAJGUayU3rXrd30X8/KA8dOrbP6NqueT1P9+545cW1HTl5b38icrgg4WjX9NeERvup8tcnVzc4CgRCKP75t9EYc6Mlg0ODJ2UL5dPP3SRVWO+n09EAVGwQKiCaP6res77/HBvx7CIxjk/LZh5NfRN5jWnXDSc1IY3UVCdmxE3p5W5wRSkwO259Xe7bny/Ee8D0qR9IDX9hzacns5X/FLfq35/poDQjCLPe8zsVqmn3zv/DJzzFpB21um9sevGX1v1Q//H6tg0xwJiWDja7aRoL9ex7V2xruubLIGdmUnZ/QlhJi/pwnmc81j8q4t/1zlvRAlA6Q0/Kp0u0sGcA85+C6LQXiG57vXpjT9GOggLpqEwASUAojABBRCRDpLr7kmtf4P2i3PKrM//DjMbRwkJKLC+FcOC33b6eAAgRTqwMutX3P3nws7AvG/LsKvSLiclqNid2zq3v3dxTgqMP/unys0vu7LdiEBkxFckVr+6cOQr0upoaG2RRmlntv4MEM1Mp+QPfKFw7OsAOrH61dnt70VhICAQpTe+tXj8W2cZTUQaUVRHnp188VNoxKFe8BlJuUAKEWdjLKQBRW7f54rHviljWTO9ruO6nzOTqxCJdGAm+tPXvmVqz2ekneUsGxaO9vsp3Ts/hEa4kUp0nZ5LNZNyGZHe+OPF499sXO4LtXKtzLWxzq1Q7+FYHXlm9Ok/FIYDKKojz1uZDcm1ryciFGhntxiJ/qA6eq5AB7WJ8uBjwp5dbYwgpsspzTvSLw3Wxl4UsWz59EO1iZdX//D/QWkDIgDF+3fl9v0Dbz3Jrkp7R1FDu7n05p9wVtxCzZyUOTMpy3XhPAogHeve4fTu1EF54dOFSNq3MhsAJZAO+2t15DlEKcykMOLCTNT3o8X6FjZGYgXo4NxPQzSElRTm7GOm9Ok538tCMy4Mx0isdCf31yb2AoQT6mjGVwojAVqxt8LC0bYmSFXN9PquG94HpHGxMykFEMt54TwBQHrjWxsbXAikjMRKqO+nAACgapN18SUNpLVXrm/TqwPSQeNo0Zzg6Myj0bciDaSJNGgdlEdmv43pCDPOZRxZONo4fgIpr3vnbwgrPb2tWSNXZnYmZbnvLYQCgBKr77Y6NlFQa2CjobTT8821YO6/UFqIUggLhYnCkFYa2rxt1dyt7TSRRrY2OMbRnvsfpXJzqWvfEtbpwch0L7xk6V6L/TH1qYewYy9tL0EghdJObXjT+HP/v2HEF+q0M1mnC5xNlLaXO5I/9CUiQgBA9ArHG+zyjYAynIsBAADdOJ23PquCiIDCcHpm2/Mr2q+EesedioWj1Z6mtWckVnTf9KvN6/QAAcDYZTyTQoGrvRIKAwC0V6LAXXJTDSC9/k25ff9IDTPEqYHtplHGahN7KiNPYX1XXRJGHGWMgso5iu1rLz+TioLCaKhHpMK8FVWdsju32d3bASicBvJLgxRU0OQqsCwcbbjxhfYrXbd9VMa6mmWX12dSKpfpTAoCgNWxMb7qTmkmAUD5Jatj4/RLSzDGhjPWpKXTnbzmtfmDX4Lz2oYeBQAIIyaMxIx5Mp3HdfbvMhJ9ybWvF4ZDpBExKA+7uSNoLKAdaDjSzkiny+m7uevG9wsjXs+LE1g58xjpoP1bfzPLTjhQKi+fvOa1qfVvaLIE9lKuSVmk5SQAIHv9z2ev//lzX2pz5gIRIFRHnrE6t0krBQDpjT9eOPa18zotFFRI63nRJAKU1vzMrvrvcnpudF7zqZkni8e/PvLo78BZEysoASC74xc7tr0TpSPqr1JoofjFgeKxrwszwcFRFo6Wh2jtSzvbtfODixiQZ9ekXNbpXmcvA8UlSbImDQC18T3KzSXXvp50YHdujffdqv3SopVHx7pfIazUTKgi3InWLw745eGFgtNEpHE6OE1BrVEAWxhxCKMtoUAgApE7uX/k8Y9ov8TLVVg42jBEKy/fc9OvmclVi1kCWzjylfLgozKWJR0s2ianuT3tohgeFy89n0gXjn4tufb14T/Tm358sbFYRNJe902/bp+z/nVi96em9vwNLhBnxTBoXQ9dCyPqnNN0kBgIAIPa5JkH/qt2c7Or+BgWjhaclEK8f1dm008swkkR7tSBsaf+EEir2tQFKFTzDZ/b0Y0RRW7//60MPiLMJABovxRfdVfHtncukXEuzETlzGNBechIrATS8f5ds4P8eX53ICBQCBLo7LUk0ynnz0y88Imw5yOKoDouzDicVWmNNKCY2veP+QOfz25/T2bz28P3GrGslVlbG8tzR2LhaN1JCaSV7r75vzWv01PvBqJ318eEjFE9FX2R8TVClF7hxOSev0Vc6vLFBADu5P7SwPfqy+rdnHS65xk+bTZuDOVOFY9/I7v9FwloejHxYt/tlwaFnQEiI7kKhQGE88qLzf9dQW2yMvyksNKzsyoLzNoSAATlIXdiX2ng+5nNb0cQpDUK6fTdWh1+RhhxDouycLTopBQyW3/GylzbJHEjVBkAO7vZzm6+sObM3OHJlz59cbKc0XCElRZWqj5WL6mlQ1oYTvHEdzJb3ykMJzpx7izrSEh79Ok/AtJoxNb8yBeMeG+03YdoCDMpZmdSqZHcozBkrNMvnFDVcel0h4c5fbegtHiVynJjKfx2EmbiPIZiIiIF5/vQPpDSfvninSrSYamL2T/OKxZznt4RypiXP14ZfCTUqQjlXejtCihYdJj5rJRzinYtVW2iNrF3Vvc7txqJflIecN4oC0fLfex8FjshYpi5eCGPy7B4zLwRG4UVLjNr3tvPFhtCFIWj/w7T86bnSAaRchsLCi7JxUUkraqjz01/BS3MRKxrO6na5bEPMXNFC8eyXSKJCCrQwawdJMw4CBlmPIQOj5gzr0FBmXSAC47VpIWZqI4+504eAMAFDBwC5ebmXcs5WVtEJAxb1P2p9l0OIpRWbexFIEKUoYfirLi1STCLYeFgInoVotBBpb5KNczLdPrq6ZtCAmlpZ2Ssa+YNQXWclAsgFnZoUJBfLRz9j4WNEiGC8hkAmNkSwUj0h5leICSQkrFuYSUX4SvNqQA282jsraC0/fxxv3xm5jmnd6eweTdfFg7mwi0OQcp1c0cAKLTkpdPl9N4UVEZAuUF1NL7ydhGmPCACgDd1GEg13rtEoxkvn7pfubkwA33eyC8sL3eUdAAoQu2Ir7wNhaXcHAVV5U4l174OACl6U14AokB7Je3PfZQj5AaFoby8Gxb7AAAgM7XGylxLqsZlR5cPBp+CNgc4UFbOPJbZ9DasBxqo55bfFlbKyx1ObXhz5w2/HC4MCxd1VIafRGE2tPOJhLCC8pnSwH2ZTT9BQHM3gBLS9vLH3cn9sa7t4TNWx6beO/5H4fC/kfbjK+/IbPnpcNKaIop6ABixrsSqXfNLB/pe7nCUqUJUHX0uue4erCeDSKd3Z230eWEk2GNh4Wit/9TrwSxZsGN6t4HL63RqLcxEdegJd+qQnd1MOkCU0unqvf335nU7HaAwqyPP1sZexMj6NwSE0ioe/Xpm41sRxLx5WUTSXv7Ql2J37CAdznxTav0bU+vfONMOEBEFjQyB+lqVvptX/fBn5/0INz/wrbc3NFVIo7Rq43uIAkQZZuI7K26e2vc5npRlV6U1V19Y0xW3xVI9hAEoGhW5u8TeivbHnvqD6TX4SFqR9onq/w9LkKvqxNgzHwfAJn2NNBpxd+Ll6ujzZyXUEWlhpkonvlM68Z2wISAi7ZMOgBToABCn9v1DUB7C5ln8c/ZJACLtRR5LKG2/OOAXBqZz+DDWtcOI95H2uHQgWxwXrBqmXxyoDD+1YIXL9rVDgMIrHLvs/GrSaMRrEy8Pfu8XO2/45fjKW1FYABKgvsaUglpl6LGJ3Z/yCwNoLmZhGBKpwpGvOn03LyRT1siTv+9XhjMbf1xYqTkTt5Q/9C8Tuz8ZX/mqxajd/L+bdX6U2s3VRl+wMhsIAEkLKxXr3lE6eS9aFs+wLIto3tEv3tH2zyTtw7wydks4vJ+1M2u7PhdIyVinjHXObMUaVEa1V6inYJISVtqI9868qmqTqjYZ7opStzuCKhBZHRut7GYj0SeMhPZLQXnYnTro5Y+iMFHas3s7k5LxXhnmfaNQbk5Vx2c/LVSI9DUAAiCsmuNO+xEIQNovmalrYj2vMJNrUNray1dHX6iN7xHSNpL94QSwqk2o2hQgorTN5KpI6VN+6TRp34h1zTsD1THt5mfPgN1hON0wW/F0at4ZYFg4LqTjXaQ8Qlqy8Q3ru6LNapQxL3Gb1LwanyhnNp2eeUNoX5D25m7+jsJCI3buN6+7GI0+DWAm3Ws6qWyeCUDKJVWbaQiliUYciGZbF0bdZ6FmzggAShsASQdAc37jzCfU7aAAos8Aw67KZdOfL57LgcIEtOY5R/N0wUDDbPgq1AO3aNgIDs6JJQAsXEZ8XnPnfhrA7OqYBZLBVGjCzGlouhSgtOqux8xnIjZbaBNePkJhADb6jYRoQPQZYFg4liXR8rc4cSQCUNSG5ppOIRHQQg0t2J8Xv9Cm9TPAXI1wxg7DMCwcDMOwcDAMw8LBMAwLB8MwLBwMwzAsHAzDsHAwDMPCwTAMCwfDMCwcDMMwLBwMw7BwMAzDwsEwDAsHwzAsHAzDMCwcDMOwcDAMw8LBMAwLB8MwLBwMw7BwMAzDsHAwDMPCwTAMCwfDMCwcDMOwcDAMw7BwMAzDwsEwDAsHwzAsHAzDsHAwDMOwcDAMw8LBMAwLB8MwLBwMw7BwMAzDsHAwDMPCwTAMCwfDMCwcDMNcRRh8Ci5LEBABAICAiFtkWDiY6N6EAAK0T8oHIkCB0gKUQGrJWhQACNojFQARCInCXPoWgbQPygcCEBKFBSiWsEWGheOqVg1ByiXlGk6PEe8DlDqoBKVB7RWFlQLE9o/MKCmokvYMp9eI9wEK7Zf88hnyS8JM1c2B9rdYIR0Y8T4j3gMotFfyS4OkasJKAS1BiwwLx9WtGtovWen1Hdf9bHzlLiPeCwCkPK9wvHj0P/KHvwyIKIx2agdK7RXs7OaO697lrLjNcHoAgFTNyx0rHP1K4ch/gDAQZTt7MgrtFeyu67Lb3uWsuFXGOgFAB1Uvd6Rw5MvFY19HaQMI1o4r4G49+sU7+CxcBtdBar8YX3F7351/LO3Mua9Xzjw2/Ohvg/ahXT0ZpfaKiTU/2HfHHwgzfu7r5VP3jzz+YaDQs2hXi4XU+jf13v4RlPa5rxdPfHvsid8HwYPZFYD8wNvW8Fm45HENUq6Z6O9/7aelnSEdICLAbOCQKLDS6wynu3TyXjTsNnRjFBTUrMyG/td8SpgO6ADOblFZHdcKK1k+dT8aTptarMS6tve/+i9RWgv9RmVnt4CQldOPiLa0yCwlPB17WSgHKb/n5g9JK02kUBjTPQoAEFCgMIB0av0b7c6tFNSmJyNagABA99zyW8KIASlYoEUJpNPX/n9meh2ptrSoEY2eW38bhAEL/kaUQDqz+e1Gsl8rb86rDAsH08CAT667J77qLiKFKBc8CIAAhd2xmbTX6lVDqb18asNbnL6dQAoatggoLbtjMym3xW6MKLVXSG/5SbvzOmrUIiIACjNhZTaQdtsgVQwLx9WMDqSV7rrhfQCEzfongW5dqED70unpfMUvAdAiFEEDYGvCgVq5RnJ19vr3ABFi01uOnRQWDqbpUOwX05t/0kytAdLQsFMRgCAduFMHUVjQinyg0H6pY+tPG/HeJi0i6qDqTh1EabfSIqKgoJK97uek3TEtQ41aBO0VvNxRIWxOCWPhYBqHNrRvxPs6tv50KA2Nx2ACxOKxr3tTh9CItdCpkJRrptZkNv9E6PtEhCQAsHD43/zCKZStdGOhg6qV3ZK+9sfCfLbGP1EDYP7gF4PyEEqL7Q4WDqbhUKz9UmrjW2Wsi0g39OpJA2JQGZ148ZPCcFoZisPBP735J4WVDqWhcYvCLw5M7fmMMONArZgbSKrWseWn0IhFmRukEaWXOzK193PCTBJpvj1YOJiG5oZ0ejo2/wQAYZMLgZMvfVpVxlC0MhSjVp6RXJ3Z+NYm5gYAAE7s/qTy8ijMC28RUaualdmQXPcji2gRJl74ax1UQBhsbrBwMFHmRnLtD0unJ/REIgZ/d2Jv8fg3hJWmFlZzIAoKyqn1b1iMuVEdeaY88L1WWwRBQTW14S3TZkujFhWgKA8+VB58WFppXrHCwsFERC0Umon0xrcu5uDJl/+elA8oWmxR2Jn0tW+pd+rIQ6de/ntqddgPTaru1IY3NWkRBZDK7f0soiS2NVg4mIiuooOK03uTnd0cZcOTBhS1sRcrg48KM9XSUIxC++X4itvM1DVRkymkAEVl+KnK8NPCTLYS3QAUOign+u9sMn1DCgDLpx+uju4WZgI4usHCwTS24RG0Sq37kbo6RJI7+M+kvZYTohAAkuveAACRo7oAgPyBz7fFqEI0kuvfEP4d2SLlDnweULC5wcLBRPVhrT0jsSLef2fdUG9sbniFE5XBR4SZbM3cQFKukVwVX3lbGOxo3CK6k/srw0+3OvgjUlAzM+ud3psAoEFyar3F6uju2tgLbG6wcDBNbHgKqk7vThnLRoUMgQCgeOwb2itgo4636KtMQTW+4tZp7yOyxaNfo6CKrd0YCIJULb7yVSjtpuHV4tF/Jx3w4hQWDqapFU/xVbsibXgClKRq5VPfR8NpMdMcAQBFYtUPNG1Re8Xy4ENoOC1mUhAQCjPRf2fdL2twEgCFqk2WzzwmjDibGywcTGQv1oGMZWOhDd/o/BMBQHXkOa9worXETajnpzrdsZ4bIlvUAFAZftIvDQrZ4sp9JOUZiZV29/bQbWkgLhoAymceVZXRlrJFGBaOZaAbSMq1MhvMxMpwPUiE11A+/RBohS3a8GEWVnaLjHVGtoj1FlvvwYikXLvrumjPKPxdldMPAgrWDBYOJtreQNK+3bUdAKPcAZSkvOrocyjtFr0GBAQdxLpfAfX1II38FKH9cm1sN8oYQMstkop17YCoGRwCFMqdqo2/jEaM/RQWDiba+QdAjIU2fMODNAB4+aN+8TS26jUAAYEw7K5tEBF+JA0A7uSBoDSM0mpxZSoBobCmW8SoFsdfDlrNo2dYOJaFcihhxK3MhohOFY7StfE9FFQRW7xACKSkmbLS6yMud9hra+MvkXZb9YwAQQfCzpiptTMeUESLQAHPprBwME06FelAxLJGfEUYC2gYbABwJ/a2I9wApAPpdBrxnsa9uC5h7tQBQNmWFo14j+F0Rf5GAQDu5H4QBud9sXAw0Z0KQQdGrFtYSYjqxxIAvMLJdsw1IOlAxvtQxqLqfaEAUn7hRJta9I3ESkAJUSEVJFXzS6d5PoWFg1mEp0LKiPeE43JEGER7RVUdhTbsooJAynB6Z8IKjVpUtamgOtH6vi0ICKTDLVoaKgIBAATVCVWdRDRYN1g4mOZ2vLSzTTuVcnPKK6KQLbcHQDrc94gaixkAqNok+eU2baFC0umO9LPCFse1qoLg7ZdYOJim3RhI2OmmnUp7BVJuW/Y0IyJppZseprw8KRewDfcDAQkr1eQQAOXmSfl8B7JwMIs74wttYnZ2N/ZLoFVbtghARDRiTbsxBdW2BCkJAFAII97kGADtlTh9g4WDWXRPjuxU033rYvco7Vci17+dX5gDhbVIkWFYOJjFjcnKvzROUvQR0qpv+9SOn8jl/1g4mHYLR1BpflXMBAjRrr1FSPuLarEdAQ4EINI68jeGMiaMOG/XxsLBLNopCMrNr4qVbmMitvYKTe0RYaaFMNviIiGg9ktNW5R2hpM4WDiYxfn0KIPqJEQs4kAEACPWKa00UKvlbQgAQKjaVJS7gggAMt6NVrJNYQ5U1YmmDpJ0etFwQLNTw8LBNOvIiDKojgI0rhgYjv9WWsb7SActG/MEQgSVkchrXZcqw+kh7bfYIgEBzrQYKY7xHsPpJgrYYWHhYKJ7FYEwVGV02pJvlAOmAMDu3ErKb3nJGaEwgsoQqbDccaMWNaC0OzaT9lu3OFAYfulM5Ma0CKRR2lZmAymPiwaycDCL6Ma1Cb90pq4jjXF6b2rDUEyEwgzKo0FlOKLFMIMj1ndTG8KxYYuV4aA61rzF3puAWq5UxLBwXPUgSvIr7tQBiCpyI0LhMJxu3boJgFL7RW/qUESL4VrV+IrbZCwLFLTsHBnKzXu5oxFWVSgW8ZWvElaKeO6WhYNZRE+G2sjzEB0fJS2dbmfFbRRUWpwlDVedVUdfiNYzIG0kVsZ6b9J+BVorqo6AoP3q2AtR4ogCgKzMBrtrBwXVtswEMywcV3GUQ6OM1cZfJFWLXFFGAJC+9scAZesVwFDa1dHnSAcR2yzQTIut/0YglFZ15BkgiipERBoA0hvfQjpgb4WFg2kW5pC2VzhZHXsJgBrmTaAE0k7fLU7fLbq+aPWCG9QoY17+mDt5YKa7LuhDAVC8f1es5wYK2tHi5EEvfzSqgABKAEquea3duVWz0cHCwTS35XVQOnkvADaJXyB27nhvG9IqUFBQLQ3cGxF0qHd4YWS3v6d1EwBRar9UGvh+8xalnb3+F0i5bHSwcDBNBmRhxiunH1K1yagpUhSh0ZHa8Cbt5gCNlvwjI14euF/7pSj/CCWQTqz6geTaH1ZevpXt4wg0GrHSye828chQAunk2nviq+5SXgFa3bCOYeG4ur0VYQWV4eLxb0SWAgtjltR1468ayTWkWjHmSUjbLw4UT3y3ybYMgADUvfM3DKeHlHfhLRKhdLzc0fKpB5r8RgBA7Ln5Q9JKQzuySBgWjqtXOUij4eQPf1k3KbqFACRjnb23/x6QAqIL7ldhiLRw6EvTTgFFSJURX9Fz20e0csMk+RaiOUbuwD8Tqah1tyiAtJle233rb2u/zFmkVwryA29bw2fhEgi2sILykLAyTu+NUUmWiEDKTK2Rdkd54D40nAudZCEhLb90yoiviHVvb9qilVmPMlY+db8w4y20aPuFE1Z6nZ3d0rRFO7sZgCqDjwgz2eKOUAwLx9UMCtOd3Jdad4+wkkANdxIIS5DHuncAUPnMo9KIX/gELRru1P7U+jcKw6n32MYtOr03UVCpDD8hjUQLLaI7dTC94UdRWOHm11EtrrgtqI7XRp8TRoK1g4WDaWR1GNqdVLVc8prXEuiolIfpfqXKw7Wx3cJMXNj6dxSmqo6RqiZW/wCAjgphIAJRvH+XXzjuTuxFM35h2eihYUUE8f5XRa5emW5x9V3uxD4vd6gF24ph4bjaYx1oOO7Ey1bHtXbHRiAVGYxEAIqv2lUdeS4onpreJ+VCWqyNvRjr3m6m10a2iAAECPH+XZWhJ1RlGKV1gS3KWG3sBafvZjO5qmmLiDLevyucckLJ1Tou41GPT8EllQ5CIzb29B8H5TOROxjV3QqUdt+uPxR2B2nvAuOIRCjM0af+QFXHm7UogEiYib5dfySMBOgLLQ6CCABjT/535eXDz4xsUUu7o2/XH6Ew2lUDlWGL4+qMdGgv707sS617A6KIDAQgkZJ2xkqtKR7/5gXvR43CVLUJL38kue4erK+YiVg1o2Ssy4j3lE58V1yg+0AoraAyEhRPJde+HkADYnSLRrxPWKnywH3YSkCHYeG4uq0OIR0vf1RVxxNrXgMU1a8QBZGyMtcGldHa6AviAvsVCTPuTR3UXjGx6q7oFsPwip3d6hdP1Sb2XLB2CNNxJ/YSqfjK25sFO+rBYHfqoDfFwQ4WDqYhGo14bewFIO0061eICESx3leWB+678N3eSKMRr408jUbM6d3ZpCcDAILTc0PpxLdJVS8wv5MIDad65nEZy8a6X9EsoAOAGOveUTz+DdABL2Nh4WAa2/NGvHLmUel0x7p3NAsiamHEpd1ROvGdVjI70HAqpx82U6vtzq1RLSICaWEm0YiVB74vWjABUNrl0w9YHZusjmubtaik3QEAlcGHBDssLBxMZL+KVQYfivW80kytmfYgGhnz2u7YVB19LigOXHCwI4x3lE8/FF95m5FY2bzFzq2VoceDC59hCfeVk+XTDyVW3SmdnsgWEYhindvKpx9U7iQKg2+Pywo2Ai8jowMQAcXoEx8NKmPhOB95sMhufy+12KKQQHrksQ8rN9dsQyZCYWSvf3dLdUmJQJgUVEce/7D2K/Xv0NCwIjScjm0/S0EV+UZl4WCiQg8yFpSGxp/9k2Yr7iWQjq+83endSa0U7CAtzLhfODH+3J+Hg3yEcQJAidV32907WqpLRkpYSXdy/8Tuv24+OwuUWv8jVnazDmo8NcvCwUT1K2lnSifvLR7/Vji/EGUvAGY2/Tjplur9kg6E3VE89rXy6QdDl6RRPybSKIzMxreS8lpvsXDoX6rDT0e3GCppasNbSFWRQ6QsHEykOa/RiE2+9L+0V4wsZiEAIL76B8z0Wq1qra0rJRTWxO5P6qAaUSIk7LqJNa81Ev269W0NECde+Otmjo8AgNS618tYN/GiexYOpkk3lo5fOJk/9KXIYhYIpIQRT6y6k4JaS1EA0sJwvKmDxSNfbdailnYmvvJ2CiqILbaYqI2/VDrx7XAOpZG4AGkj3uf07eTygiwcTHOHBY1E4chXtFeMrFeMABBffTcIg1qtaRyWCPlXCqqRLVIY6QAULU6QhjWNcwe/SNqPUAQCAqD46ruBNNsbLBxMk24lpOUXT5cGvhc6Lw0HZIBY13YzsbLVLdGIhIx5+WPlwYdDi6DxDYOxnhsMp6fVgl2k0XDcyf3VoadC66mBNCIAOr07ZSxLLW+my7BwXO3KAYRClk5+F6Y3TGrkOwgzYWe3kHJbtOQJAACLJ++dsWUaSBXJWKfVsbHlwEr9+xdPfjeyRQFAZmKlmV5LyuUSYSwcTLMBWTq1iX1BaTAipyP0UKzOrUAKW25RGE5t7EVVm4iYKA3NHzu7BVrfDyXcZWb0ee1FVlEmDYh2x6Z2bKbLsHBc/RfH0F6+Nv4SRO3eCABgZTa0HnSo795YnahN7AWA6BpcZmZ9O7wGQmn5lWF36mCoSY1NIbAyGzjxnIWDWYwdD0C6vpFS5FFmYgXK2IWVBTs7oECBN3kQouKxCABmsh+lSS33ZAQE5YXCES2ORqIfUBJrBwsH0zTMASi94imI2GgWEACEnRXSar1OJwEACK84ENkiAIC0O0FYrUtV+BP8eotR4ihjXSgMNjpYOJhFdCmUyp0CgMYLSUOfxkEZoxb2T5jjrUhVmwzbjujGaNhCWtByiwQAKFRtfI5t0chvc7DeIsPCwTRTDtD+og6L2p/l/HwH7Zead2NhoTDbUYucAFAHteZfTNqtb8HNsHAwS2jmNO/upKZ3Wrponptm1WDhYBbXWUijjM3GHxqEJUgHpNszVUmkhZWa7qgRvdgn3ZZ0LAQgaSabHqdVDTQngLFwMIvpVKSk0x3ZjQkAtFeaTgCj1tpDIGWELUZlnYP2y21qEYCUjPdC41mVunD4xZa2s2VYOJaNbACQttLroVnvVLWJ6X3h22BzmJnoFgkAgsooab/1PM4wXdXKbGh6VFAZ5ZRzFg5mMZ2KQBixruugcXcJR2m/dIpUG1adE2iUdqzzemg8HRsKil863YbMUQAgjWbc7tzWvMXiKSBi2bhM4FKOl7HBoX0j1m13ba/PQS7orRABkDd1BICw1eAhkvKM+Aoru7neVqMWkbzc4TaMOigoqJnptVZ6XUSLCAQAXu4ooOToKAsH06RTab+aXHuPjGUBAGDhmY6wKIY7dQBEq3mciEIHtcTqu4WZiD4MANypQ61njiKgVrXkNa9DaTexi0l7ucMo25VyxrBwXL2eCqK0u7b5hRNEqsHwTogiqE14+WNC2i0mRxFplLbdudUvHCfSDVrUiNIvn/GLp1DaLXZjIi2MuJXZ0LRFN3c0KA+j4N1kL5tx7egX7+CzcNleHURBTfIXEEhFbcV23kZAdKHTpWgRmwlQe1tk2OK42o2ORcwjUFtnKAkuQYv64rbItAG+Hpe70cEtMiwcDMOwcDAMsyxZTjEORBZKpgUozJrhE7GchAMFBTXSHl935vxvnjDtTQjDAWFwLsnyEQ7Uftnu2Gh1bOJ9z5kLM1e1V6qN7VZuHg2b6wktg16EQvul1Po39d76u2jEuAswF4xXODH04Ac4FW05CAcCKWEmum74ZTRioAPOCGAuDCJlpdd1bP2Zsac+JuwsNUmTY+G48i84GjYICUCAknf0YS74TgIiYcY58QSWwSwDAUrtFYPKSBjj4kvOtGC/opc7wncRLIvpSRQU1PzCSWhWY4phIp1eAQBe/jigwTeSWAbXGwDInTrEtz7TmumKpGp+4SRKXqS7DIQjrKPl5Q5B1O7NDBN9G4WV1gaD6igKk6djxXK45EJYXv6E9grhZuvcC5gLGX4A3MmD2i/DIraPYOG4Ki66tFR1zM0dnRk6GOYCqI2/xHVPl49wAAKSct3Ibd8ZJuoWQgGk3YmXUVp8Cy0X4Qh3b66OPg/N9lJmmIVuIA2AfmnQK5zkuqfLSDiACI2YO3lAu/l27bHKLCPdAAKA2thu7eYBea3T8hEOIBRmUBmtjb80PYAwzHm4ugBQGX6K046Xm3DUNzesDD0ObG8w52twoNB+uTa2G2WMR53lJRwEGg27MvwMKQ9Rsnowi751NADUxl4MSoMoLb5zlpdwABHKmF84XpvYE/6Trz2zeMqDD5NWvLxt+QlHfVLWK596EHhSljkPP0XqoFodegIN9lOWpXAQaDScyuAjpGrsrTCL91OqI894hZNC2nzPLEfhACIhba9wsjL8zMw9wTBN7FSA0onvAhGxn7JMhaN+H+jS8W/N3BMME+mniKAyVhl6QphxWN4lv5a1cBApYcQrQ48H5SFAwUYHE3m3aAAoDdyrqmMoTD4hy9niABSmqk0W60YHu6xM41sFBemgePybKG0CHmOWt3CEIdLi8W9QUOP0c6bxjaIAsDr8pDuxHw2H5++Xu3CECR1e/mjp9P0AyN4KE9E18of+lU8EC8eseCCahUP/AqR5twRmoRtEA2JtYm9l6AlhJnh0YeGo3xZoxqujuytnHg83XuH7gDmX/IEvkHJ5aGHhmAeiyB34p/BPvg+Y+eaGcHOHy6fuF2aSxxUWjrOMjkRl+OnKmccABd8czFnk9v2DDipcXpSFYyGjA3Dq5b8P6zvxrcDMmhuT+0on7xNmikcUFo4FjY5kdfT50sB9bHQwc5nc8xmObrBwRIkHSmtyz2dI1XiDSCY0NypDT5RPPygsNjdYOBrfKEI63tTB/MEvcgY6ywYAkPYnXvwUsq3BwtHkZiEtzOTU3s/x6hU2NwBF4fCX3bEX0eDcDRaOpt6KMJU7NbH7rwGQC/ws2wEEUASVkck9fyfMJKsGC8di7hklrHTx+LfLgw8jSvZsl6WXogFw4oW/UrUJFLynNAvHokFpTTz359orcpR0+cmGQpTlU/cXj39LWGnikYOFY/H+rZAxL398YvcnOdKxzNCAQtWmxp79M5Q2r4Jl4Th/h8XO5A/9S3nwYWCHZTldeAAcf/7Pg/IgVxVl4bjAmwilNf70x1VtAlDw4LMcnBRAWTz2jeLRrwmrg50UFo4LHHyEtP3ymdGn/wgACTSPP1e3fwoo/cLJ8Wf/lNfOs3C07LBYmfLJ7+b2/yOi5JvpKr7UAEDKG3nio9ovAc+ksHC0PhAJq2PihU9UR57lYMdVbW6I8ef/ojb6PC9mY+Fo01iECIgjj384qIwA2x1Xo10JKAtH/z1/4AvCzhIFfE5YONozHKGMBZWRkUd/i5Q7Y9kyV8XFVYiyOvr82NMfF1aKRwUWjjbfXtJMV0eeHXv6D6czO1g7rg4PRfql0yOP/ma43xJfVhaOthu0gbCz+SNfnXzp0xzsuFpUQ2ivMPzwB4PqBEreRJqFY+nsDrtj8sW/yR/+V0CD5/mv6HEAEEn7w4/+lju5X3JAlIVjqW84YaXGn/546eS9iJI0321X5FUEIAAcffyjlcFHpN3BAVEWjotwzwHK2MjjH64MPoJCst1x5V1BIkAx+tTHise/Lu1O0qwaLBwX584TElEMP/qbleGnECXweHWlqcb4s39WOPglaXeyrcHCcTFvPw3CBK2HH/q16vBTgAaPWleWakzt+wcR62RrkYXjUmiHNEnroYd+vTz4CAoDON5xWV8vAgBAMfbMx3P7/1HGOjkaysJxybQDpQmkhh/+jdLJ+0DwHO1lrPKIQHr08Y/m9n9e2Fm+Uiwcl95nQTRGHv2twuEvTyekcxLRZXWNFKDQQXXo4Q/mj37VcLpYNVg4LhPtEGjERp/6H5Mv/W192x5OJbpcHBQFKFV1/Mz97ysPfN+I8RwKC8fl5T+jsNKTL35y9MnfJ614L7jLRDUQpTt5cPC+99RGXxCxLKsGC8dld5cCaWFn84e/PHT/+4LqGKelX/LLEdYcPvO9X/RLg9JKA6sGC8dl604bsc7K8NOD9/5CdWw3hzwu1VUAQEAxueczww9/kLSPRpxnXlk4Lu+bVgfSSgflkaHv/1L+0JcABQByyONiuieAUrm54Yc/OLn7r9GI82wXC8eV41obMUA5+tQfjj7+Ee0VOeRxcTQbiBBldfS5we/+fOnkvdLO1pO+mCXG4FPQtpsYUNod+aP/UZvc13Pr7zi9O+vP8w7GSyTWKAFo6uX/Pbnn78J4E6eTXzTw6Bfv4LPQzhOKhg7KgDJ7/S9kt78XhUGkMPRfmHZpNCIAevnj48/+SeXMY8JK8zZaLBxXwUkVQKS9fKx3Z/fOD8a6twPUt/Dgc9OiZoQlvAAgf/CfJ1/6G+UWpJXiOCgLx9WkHlJ5JSHtzLZ3Zq9/tzCc+pDInssFikZded2pgxPP/8/ymcelmQBhciyJheOqND209gp257bOG34lsfoHpjsAey4X4ptov5zb97ncgS9ovzJdZ5jjoCwcV23UQ+qgQqST1/xQ5yv+s5XZwPJxHpIxbaOVTnx3cs/furnD0kpzrh0Lx7IxPQC0VxBWOrPpbR3bflbGOlk+FikZ1dHnp/Z8pjL0BEpTSIcjGiwcy+1kS6BAeUUzubpjy0+lN71VmEmWjwjJcKcO5vb9Q2ngPtKBMFP14CjDwrEcHRcUWnkUlK3MtZkt70ht+FFhJuryAQIQWTIAwJs6mDvwhdLJ+3RQFmYqLK7Bdw8LB8uH0KpGQc3KbEhvemtq/ZumnZdlOPNCRBqn56rdib35Q18qDXxP+2VhJhG5OjQLB3OWekAoH1UjuTq1/g3pDW8202unO5PCq94AmauSpCtDj+cPf6Uy9Dj5VWGxZLBwMM3lw6WgIu1sfNVd6Wvf7PTdMqc+EF1tERDSBDRjYqjaZGnge8VjX69N7AXSwkwiCpYMFg5msc4L6UAHZRSG3Xldcu0PJda81kyumjM401WVe0q6Ovp86cR3ymce8UtDQlpoOADI86wsHMwF6IckIAqqpFwZ63L6diaveZ2z4rZ6BOSqwMsdLp16oHL6YXfqACkPzbgQFvGMCQsH0/JlEQhIOtBBBYCM+Aqnb2d81V2JVXcJMxnuZnjFGRgASKRGHvnN8uBDpFwUFhoxBEGcAHoFwusmLtcoAClAIayUsDLKyxdPfHvogQ/Uxl+edluu0N9F7uR+AJB2Fg0HiIgUq8aVCNfjuLxHaSIAQDTQil0dKo+GA2HZLi63wxYHs/QKoq6SEAAHMlg4GIZh4WCuAEv/yo8I8JKcqwGOcVxB/U2T9sK5iSvRRUEQgIIoYO1g4WAuXscDlIXD/5bo34XCukJ/Q/Ho14LSIEqHIx1X/DjGeRxXzrVC8qux3hvjK1+FwryisjkIALzCQOnEt6fzX3lKhS0O5iL1PkIzXht9oTr81JUW7MBQ+ISZBBCsGiwczEXWDo1mXEDiyvS1wpojrBosHMyl0A7uecwlh6djGYZh4WAYhoWDYRgWDoZhWDgYhmHhYBiGYeFgGIaFg2EYFg6GYVg4GIZh4WAYhmHhYBiGhYNhGBYOhmFYOBiGYeFgGIZh4WAYhoWDYRgWDoZhWDgYhmHhYBiGhYNhGIaFg2EYFg6GYVg4GIZh4WAYhoWDYRiGhYNhGBYOhmFYOBiGYeFgGIaFg2EYhoWDYRgWDoZhWDgYhmHhYBiGhYNhGIaFg2EYFg6GYVg4GIZh4WAYhoWDYZjlzP8DEoji7WoxTEMAAAAASUVORK5CYII=";
+{const g=gSDG.append("g").style("cursor","pointer")
+   .on("click",e=>{e.stopPropagation();if(st.mode==="explore"){clearSel();showSDG("02");setPanel(true);}})
+   .on("mouseenter",e=>tip(e,`<b>SDG 02 Zero Hunger · primary SDG</b>${SDG["02"].head.join("<br>")}<br><span class="m">Click for the details.</span>`)).on("mousemove",moveTip).on("mouseleave",hideTip);
+  g.append("circle").attr("r",R_DISC-10).attr("fill","#DDA83A");
+  g.append("circle").attr("r",R_DISC-22).attr("fill","none").attr("stroke","#fff").attr("stroke-opacity",.35).attr("stroke-width",1.5);
+  g.append("text").attr("y",-168).attr("text-anchor","middle").attr("fill","#fff").attr("font-size",12).attr("font-weight",700).attr("letter-spacing","0.16em").text("PRIMARY SDG");
+  g.append("image").attr("href",SDG2_ICON).attr("x",-96).attr("y",-150).attr("width",192).attr("height",192);
+  g.append("line").attr("x1",-70).attr("x2",70).attr("y1",58).attr("y2",58).attr("stroke","#fff").attr("stroke-opacity",.5);
+  g.append("text").attr("x",-52).attr("y",92).attr("text-anchor","middle").attr("fill","#fff").style("font-family","var(--display)").attr("font-size",30).attr("font-weight",700).text("645M");
+  g.append("text").attr("x",-52).attr("y",114).attr("text-anchor","middle").attr("fill","#fff").attr("font-size",12).text("undernourished");
+  g.append("text").attr("x",52).attr("y",92).attr("text-anchor","middle").attr("fill","#fff").style("font-family","var(--display)").attr("font-size",30).attr("font-weight",700).text("2.1B");
+  g.append("text").attr("x",52).attr("y",114).attr("text-anchor","middle").attr("fill","#fff").attr("font-size",12).text("food insecure");
+  g.append("text").attr("y",150).attr("text-anchor","middle").attr("fill","#fff").attr("fill-opacity",.85).attr("font-size",11).text("UN DESA, 2025");}
+function sdgPressure(){}
+
+// ---------- tooltip ----------
+const tipEl=document.getElementById("tip");
+function tip(e,h){tipEl.innerHTML=h;tipEl.hidden=false;moveTip(e);}
+function moveTip(e){const w=tipEl.offsetWidth,h=tipEl.offsetHeight;let x=e.clientX+14,y=e.clientY+14;if(x+w>innerWidth-8)x=e.clientX-w-14;if(y+h>innerHeight-8)y=e.clientY-h-14;tipEl.style.left=Math.max(8,x)+"px";tipEl.style.top=Math.max(8,y)+"px";}
+function hideTip(){tipEl.hidden=true;}
+
+// ---------- focus ----------
+function setFocus(agentIds,cellFilter){
+  const on=new Set(agentIds||[]);
+  svg.classed("focus",!!(agentIds||cellFilter));
+  ags.classed("on",a=>on.has(a.id));
+  cells.classed("hl",d=>cellFilter?cellFilter(d):false);
+}
+function clearFocus(){svg.classed("focus",false);ags.classed("on",false);cells.classed("hl",false);}
+function keepFocus(ids,f){st.keep={ids,f};setFocus(ids,f);}
+function focusAgent(id){setFocus([id,...NB[id]],d=>d.row===id||d.col===id);}
+function hoverAgent(id,on){if(st.mode!=="explore")return; if(on)focusAgent(id); else restoreFocus();}
+function restoreFocus(){ if(st.sel) focusAgent(st.sel); else if(st.keep) setFocus(st.keep.ids,st.keep.f); else clearFocus(); }
+function clearSel(){st.sel=null;st.keep=null;ags.classed("sel",false);d3.selectAll(".card").attr("aria-pressed","false");clearFocus();}
+function focusLevel(v){const ids=new Set();LINKS.forEach(l=>{if(l.s===v){ids.add(l.a);ids.add(l.b);}});setFocus([...ids],d=>d.l&&d.l.s===v);}
+
+function zoomSector(s){const d=SDG[s];const pts=[];for(let a=d.a0;a<=d.a1;a+=6){pts.push(P(R_BAND0,a),P(780,a));}
+  const xs=pts.map(p=>p[0]),ys=pts.map(p=>p[1]);const x0=Math.min(...xs),x1=Math.max(...xs),y0=Math.min(...ys),y1=Math.max(...ys);
+  const k=Math.min(6,0.92*1660/Math.max(x1-x0,y1-y0));const cx=(x0+x1)/2,cy=(y0+y1)/2;
+  svg.transition().duration(650).call(zoom.transform,d3.zoomIdentity.scale(k).translate(-cx,-cy));}
+
+// ---------- optional side panel ----------
+function setPanel(open){document.getElementById("layout").classList.toggle("solo",!open);const b=document.getElementById("p-toggle");
+  b.textContent=open?"Hide details":"Show details";b.setAttribute("aria-expanded",open);b.classList.toggle("on",open);}
+document.getElementById("p-toggle").onclick=()=>setPanel(document.getElementById("layout").classList.contains("solo"));
+// ---------- panel helpers ----------
+const panel=document.getElementById("panel");
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const sdgDot=s=>`<span class="dot" style="background:${SDG[s].col}"></span>`;
+function bindGo(){panel.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>{if(st.mode!=="explore")setMode("explore");agentClick(b.dataset.go);});
+  panel.querySelectorAll("[data-sdg]").forEach(b=>b.onclick=()=>{zoomSector(b.dataset.sdg);showSDG(b.dataset.sdg);});
+  panel.querySelectorAll("[data-pat]").forEach(b=>b.onclick=()=>togglePattern(b.dataset.pat,b));
+  panel.querySelectorAll("[data-lv]").forEach(b=>{b.onmouseenter=()=>focusLevel(+b.dataset.lv);b.onmouseleave=restoreFocus;});}
+function levelKey(){return `<ul class="conn">${LEVELS.map(v=>`<li><div data-lv="${v}"><span class="sw" style="background:${LV[v].col}"></span><span class="nm">${v>0?"+":"−"}${Math.abs(v)} ${LV[v].n} <span class="src">· ${LINKS.filter(l=>l.s===v).length} interactions</span></span><span class="rt">${LV[v].d}</span></div></li>`).join("")}</ul>`;}
+
+function showDefault(){
+  panel.innerHTML=`<div class="eyebrow">How to read the map</div><h2>Reading the wheel, from the centre out</h2>
+  <p><b>Centre.</b> SDG 2 Zero Hunger, the primary goal.</p>
+  <p><b>Coloured band.</b> The five SDGs. SDG 01 and 06 sit on the left because they affect SDG 02; SDG 03 and 12 sit on the right because SDG 02 affects them. Click a band to zoom in.</p>
+  <p><b>Segments.</b> The five agents in each SDG. A taller segment means a higher <b>agent rank</b> (+3, +2 or +1): how important the agent is within its own SDG, from my prioritisation. This is a different scale from the interaction levels below.</p>
+  <p><b>STEEP.</b> The lettered badge is the agent's lead driving force (S, T, Ec, En, P). The small dots beside it are the other forces that shape it; a hollow dot means that force is absent. The three diamonds are the Social, Economic and Environmental pillars.</p>
+  <p><b>Grid.</b> Each agent's 5×5 grid shows how it interacts with every other agent. Each row is one SDG (labelled in the gaps between SDGs, 02 nearest the centre) and each cell is one agent of that SDG, in the same order as on the wheel. The colour is the interaction level.</p>
+  <h3>Interaction levels (hover to find them)</h3>${levelKey()}
+  <p class="src">Levels are my draft reading of each rationale: what the first agent does to the second, judged by whether it moves the system toward or away from Zero Hunger.</p>
+  <h3>Pairs between SDGs</h3>${pairTable()}`;
+  bindGo();}
+function pairTable(){const rows=SDG_ORDER.map(x=>`<tr><th style="text-align:left;padding:3px 6px">${sdgDot(x)}${x}</th>${SDG_ORDER.map(y=>`<td style="text-align:center;padding:3px 6px;font-variant-numeric:tabular-nums;${x===y?"font-weight:700":""}">${pc(x,y)}</td>`).join("")}</tr>`).join("");
+  return `<div style="overflow-x:auto"><table style="border-collapse:collapse;font-size:13px"><tr><th></th>${SDG_ORDER.map(y=>`<th style="padding:3px 6px">${y}</th>`).join("")}</tr>${rows}</table></div><p class="src" style="margin-top:6px">Bold diagonal: pairs within the same SDG. 121 pairs in total.</p>`;}
+
+function showAgent(id){const a=A[id],s=SDG[a.sdg], inLoop=LOOP.includes(id);
+  const ls=LINKS.filter(l=>l.a===id||l.b===id).sort((x,y)=>y.s-x.s||SDG_ORDER.indexOf(A[x.a===id?x.b:x.a].sdg)-SDG_ORDER.indexOf(A[y.a===id?y.b:y.a].sdg));
+  const lvBar=`<div style="display:flex;height:12px;border-radius:6px;overflow:hidden;margin:6px 0">${LEVELS.map(v=>a.lv[v]?`<i style="flex:${a.lv[v]};background:${LV[v].col}"></i>`:"").join("")}</div>
+   <div class="tagrow">${LEVELS.filter(v=>a.lv[v]).map(v=>lvTag(v).replace("</span>"," · "+a.lv[v]+"</span>")).join("")}</div>`;
+  panel.innerHTML=`<div class="eyebrow">${sdgDot(a.sdg)}SDG ${a.sdg} ${s.name} · agent ${a.pri} of 5</div>
+  <h2>${a.id} ${esc(a.name)}</h2>
+  <div class="tagrow"><span class="pill">Rank +${a.rank}</span><span class="pill">${esc(a.cat)}</span><span class="pill">${a.pillars?"All 3 pillars":"Missing "+["S","Ec","En"].filter(p=>!a.steep.includes(p)).map(p=>STEEP_NAME[p]).join(", ")}</span>${inLoop?'<span class="pill" style="background:var(--ink);color:var(--bg)">In the vicious cycle</span>':""}</div>
+  <h3>What the research shows</h3><p>${esc(a.find)}</p><p class="src">Source: ${esc(a.src)}</p>
+  <h3>STEEP driving forces</h3><div class="tagrow">${STEEP.map(f=>`<span class="pill${a.steep.includes(f)?"":" off"}"><span class="lbadge" style="background:${STEEP_COL[f]};min-width:20px;height:20px">${f}</span>${f===a.lead?"<b>":""}${STEEP_NAME[f]}${f===a.lead?" · lead</b>":""}</span>`).join("")}</div>
+  <h3>Its ${a.deg} interactions, by level</h3>${lvBar}
+  <p class="src">${a.outNeg} harmful links go out from it, ${a.inNeg} come in. ${inLoop?"It is one of the five cycle agents.":`It links to ${a.loopLinks} of the 5 cycle agents.`}</p>
+  <ul class="conn">${ls.map(l=>{const o=A[l.a===id?l.b:l.a];const dir=l.a===id?`→ ${o.id} ${esc(o.short)}`:`${o.id} ${esc(o.short)} →`;
+    return `<li><button data-go="${o.id}"><span class="sw" style="background:${LV[l.s].col}"></span><span class="nm">${dir}${lvTag(l.s)}${l.tag?`<span class="ptag">${PATTERNS[l.tag].name}</span>`:""}</span><span class="rt">${sdgDot(o.sdg)}${esc(l.txt)}</span></button></li>`}).join("")}</ul>`;
+  bindGo();}
+function showPair(l){const a=A[l.a],b=A[l.b];
+  st.sel=null;ags.classed("sel",false);keepFocus([l.a,l.b],d=>d.l===l);
+  panel.innerHTML=`<div class="eyebrow">Interaction · SDG ${a.sdg} → SDG ${b.sdg}</div><h2>${a.short} → ${b.short}</h2>
+  <p>${lvTag(l.s)}${l.tag?`<span class="ptag">${PATTERNS[l.tag].name}</span>`:""}</p><p>${esc(l.txt)}</p>
+  <p class="src">${LV[l.s].d}${l.tag?" "+PATTERNS[l.tag].d:""}</p>
+  <h3>Open an agent</h3><div class="chips"><button class="chip" data-go="${a.id}">${a.id} ${esc(a.short)}</button><button class="chip" data-go="${b.id}">${b.id} ${esc(b.short)}</button></div>`;
+  bindGo();}
+function showSDG(s){const d=SDG[s];const list=AG.filter(a=>a.sdg===s).sort((x,y)=>x.pri-y.pri);
+  if(st.mode==="explore"){st.sel=null;ags.classed("sel",false);keepFocus(list.map(a=>a.id),d=>A[d.row].sdg===s);}
+  panel.innerHTML=`<div class="eyebrow">${d.role}${d.rank?` · rank +${d.rank}`:""}</div><h2>SDG ${s} ${d.name}</h2>
+  ${d.head.map(h=>`<p>${esc(h)}</p>`).join("")}<p class="src">Source: ${d.src}</p>
+  <div class="tagrow"><span class="pill">Lead force: ${d.lead}</span><span class="pill">All 3 pillars: ${d.pillars} of 5 agents</span></div>
+  ${d.leadWhy?`<p class="src">${d.leadWhy}</p>`:""}
+  <h3>Pairs with each SDG</h3>
+  ${SDG_ORDER.map(x=>{const n=pc(s,x);return `<div class="cmp" style="padding:6px 0"><span>${x===s?"Within SDG "+x:"SDG "+x+" "+SDG[x].name}</span><span class="v" style="font-size:16px">${n}</span><span class="bars"><span><i style="width:${n/16*100}%;background:${SDG[x].col}"></i></span></span></div>`}).join("")}
+  <h3>Agents, by priority</h3>
+  <ul class="conn">${list.map(a=>`<li><button data-go="${a.id}"><span class="sw" style="background:${d.col}"></span><span class="nm">${a.id} ${esc(a.name)} · +${a.rank}</span><span class="rt">${a.deg} links · ${esc(a.cat)}</span></button></li>`).join("")}</ul>`;
+  bindGo();}
+function agentClick(id){
+  if(st.mode==="shock"){st.shock.origin=id;startShock();return;}
+  if(st.mode==="turn"){const cur=TP[st.tp];const list=TP.filter(t=>t.set.includes(id));if(list.length){const k=list.findIndex(t=>t===cur);showTurn(TP.indexOf(list[(k+1)%list.length]));}return;}
+  if(st.mode==="loop"){setMode("explore");}
+  st.sel=id; st.keep=null; d3.selectAll(".card").attr("aria-pressed","false");
+  ags.classed("sel",a=>a.id===id); focusAgent(id); showAgent(id); setPanel(true);}
+
+// ---------- legend ----------
+function renderLegend(){const L=document.getElementById("legend");
+  let h=`<div class="grp"><span>Interaction level</span>${LEVELS.map(v=>`<button class="it" data-lvl="${v}"><span class="sw" style="background:${LV[v].col}"></span>${v>0?"+":"−"}${Math.abs(v)} ${LV[v].n}</button>`).join("")}</div>`;
+  h+=`<div class="grp"><span>Lead STEEP</span>${STEEP.map(f=>`<span class="it"><span class="lbadge" style="background:${STEEP_COL[f]}">${f}</span>${STEEP_NAME[f]}</span>`).join("")}</div>`;
+  if(st.mode==="shock") h+=`<div class="grp"><span>Shock waves</span><span class="it"><span class="sw" style="background:var(--heat0)"></span>Origin</span><span class="it"><span class="sw" style="background:var(--heat1)"></span>First wave</span><span class="it"><span class="sw" style="background:var(--heat2)"></span>Second wave</span><span class="it"><span class="sw" style="background:var(--heat3)"></span>Third wave</span><span class="it"><span class="sw" style="background:var(--soft);outline:1px solid var(--line)"></span>Not reached</span></div>`;
+  else if(st.mode==="turn") h+=`<div class="grp"><span>Turning points</span><span class="it"><span class="sw" style="background:${TPC.pos}"></span>Build on a link that helps</span><span class="it"><span class="sw" style="background:${TPC.neg}"></span>Turn around a link that hurts</span></div>`;
+  else h+=`<div class="grp"><span>Agent rank</span><span class="it">segment height +1 / +2 / +3</span><span>Pillars</span><span class="it">◆ So Ec En</span></div>`;
+  L.innerHTML=h;
+  L.querySelectorAll("[data-lvl]").forEach(b=>{b.onmouseenter=()=>{if(st.mode==="explore")focusLevel(+b.dataset.lvl)};b.onfocus=b.onmouseenter;b.onmouseleave=()=>{if(st.mode==="explore")restoreFocus()};b.onblur=b.onmouseleave;
+    b.onclick=()=>{if(st.mode!=="explore")setMode("explore");const v=+b.dataset.lvl;const ids=new Set();LINKS.forEach(l=>{if(l.s===v){ids.add(l.a);ids.add(l.b);}});keepFocus([...ids],d=>d.l&&d.l.s===v);};});}
+
+// ---------- modes ----------
+d3.selectAll(".modes button").on("click",function(){setMode(this.dataset.mode);});
+function clearTimers(){st.timers.forEach(t=>clearTimeout(t));st.timers=[];if(st.shock.timer){clearInterval(st.shock.timer);st.shock.timer=null;}}
+function setViewBox(wide,animate){
+  const vb=wide?[-920,-920,2830,1840]:[-830,-830,1660,1660];
+  svg.classed("wide",wide);
+  svg.interrupt(); svg.call(zoom.transform,d3.zoomIdentity);
+  if(animate&&!matchMedia("(prefers-reduced-motion: reduce)").matches){svg.transition().duration(700).attr("viewBox",vb.join(" "));}
+  else svg.attr("viewBox",vb.join(" "));}
+function resetPaint(){ags.style("opacity",null); ags.select(".segp").style("fill",null).attr("fill",a=>SDG[a.sdg].col).style("stroke",null).style("stroke-width",null);
+  ags.select(".idt").attr("fill",a=>SDG[a.sdg].dk?"#1b1a14":"#fff"); tokColour(null); sdgPressure(null);}
+function setMode(m){
+  clearTimers();
+  const was=st.mode; st.mode=m; d3.selectAll(".modes button").attr("aria-pressed",function(){return this.dataset.mode===m});
+  clearSel(); hideTip();
+  gShock.selectAll("*").remove(); gStory.selectAll("*").remove();
+  resetPaint();
+  toks.interrupt().attr("transform",id=>`translate(${TGT[id]})`).style("opacity",null); toks.select(".tokring").attr("display","none");
+  loopEls.forEach(e=>{e.vis.style("opacity",null);});
+  gLinks.interrupt().style("opacity",null); gCore.selectAll(".corecap").interrupt().style("opacity",null);
+  gSDG.attr("display",null); gCore.attr("display","none"); EXP=null;
+  const wide=m!=="explore"; setViewBox(wide,(was==="explore")!==(m==="explore"));
+  document.getElementById("hint").textContent={explore:"Hover an agent or a grid cell. Click to read the research. Scroll or use the buttons to zoom.",loop:"The vicious cycle moves to the centre and explodes out to the right. Click a card or a step to walk through it.",shock:"Click any agent on the wheel to start a shock there. Its story explodes out to the right.",turn:"Step through the twelve with the numbers on the card, the arrows, or your keyboard's ← → keys. Clicking an agent jumps to a response that involves it."}[m];
+  renderLegend(); document.getElementById("modebar").innerHTML="";
+  if(m==="explore") showDefault();
+  if(m==="loop") runLoop();
+  if(m==="shock"){showShockPanel();startShock();}
+  if(m==="turn") runTurn();
+}
+
+// ---- explode: lines leave agents on the wheel and run out to cards on the right ----
+const CARD={x:1010,w:880,h:238,gap:22};
+let EXP=null;
+function explode(items,opts){opts=opts||{};
+  gStory.selectAll("*").remove();
+  const n=items.length,total=n*CARD.h+(n-1)*CARD.gap,y0=-total/2;
+  const G=items.map((s,i)=>{const a=A[s.id];const y=y0+i*(CARD.h+CARD.gap)+CARD.h/2;
+    const lr=labR(a), R=Math.max(800+i*22,lr+26), p0=P(lr,a.ang), p1=P(R,a.ang);
+    const th=Math.asin(Math.max(-0.98,Math.min(0.98,y/R)))*180/Math.PI, end=P(R,th);
+    let d=th-a.ang; while(d>180)d-=360; while(d<-180)d+=360;
+    return {s,i,p0,y,top:y0+i*(CARD.h+CARD.gap),col:s.col||SDG[a.sdg].col,path:`M${p0[0]},${p0[1]}L${p1[0]},${p1[1]}A${R},${R} 0 0 ${d>0?1:0} ${end[0]},${end[1]}L${CARD.x},${y}`};});
+  const lines=gStory.selectAll("path.exl").data(G).join("path").attr("class","exl").attr("d",g=>g.path).style("stroke",g=>g.col);
+  const dots=gStory.selectAll("circle.exdot").data(G).join("circle").attr("class","exdot").attr("cx",g=>g.p0[0]).attr("cy",g=>g.p0[1]).attr("r",9).style("fill",g=>g.col);
+  const fo=gStory.selectAll("foreignObject").data(G).join("foreignObject").attr("x",CARD.x).attr("y",g=>g.top).attr("width",CARD.w).attr("height",CARD.h);
+  fo.append("xhtml:div").attr("class","xcard").style("border-color",g=>g.col).html(g=>`<div class="k">${g.s.k}</div><div class="h">${g.s.h}</div><div class="d">${g.s.d}</div>`);
+  if(opts.onClick) fo.style("cursor","pointer").on("click",(e,g)=>{e.stopPropagation();opts.onClick(g.i);});
+  lines.attr("opacity",0); dots.attr("opacity",0); fo.style("opacity",0);
+  EXP={lines,dots,fo,shown:new Set()};
+  return EXP;}
+function revealCard(i,delay){if(!EXP||EXP.shown.has(i))return; EXP.shown.add(i);
+  const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const ln=EXP.lines.filter(g=>g.i===i), dt=EXP.dots.filter(g=>g.i===i), fo=EXP.fo.filter(g=>g.i===i);
+  if(reduce){ln.attr("opacity",1);dt.attr("opacity",1);fo.style("opacity",1);return;}
+  ln.each(function(){const L=this.getTotalLength();d3.select(this).attr("opacity",1).attr("stroke-dasharray",L).attr("stroke-dashoffset",L)
+    .transition().delay(delay||0).duration(1000).ease(d3.easeCubicInOut).attr("stroke-dashoffset",0).on("end",function(){d3.select(this).attr("stroke-dasharray",null)});});
+  dt.transition().delay(delay||0).duration(300).attr("opacity",1);
+  fo.transition().delay((delay||0)+650).duration(450).style("opacity",1);}
+function focusCard(i){if(!EXP)return;
+  EXP.lines.attr("stroke-width",g=>g.i===i?7:4).attr("opacity",g=>EXP.shown.has(g.i)?(g.i===i?1:.35):0);
+  EXP.fo.style("opacity",g=>EXP.shown.has(g.i)?(g.i===i?1:.45):0);}
+
+// ---- Vicious cycle ----
+const STORY=[
+ {id:"A2",k:"1 · Weather extremes",h:"A drought or flood starts it",d:"Main driver of hunger in 18 countries (96M+ people). Droughts cut harvests.",hl:["A2","A3"]},
+ {id:"A3",k:"2 · Food prices",h:"Harvests fall, prices spike",d:"Main driver in 15 countries (59M+ people). Price spikes feed unrest.",hl:["A3","A1"]},
+ {id:"A1",k:"3 · Armed conflict",h:"Conflict takes hold",d:"Main driver in 20 countries, where 295M people faced acute food insecurity.",hl:["A1","A2"]},
+ {id:"A10",k:"4 · Fragile states",h:"States can't recover",d:"421M people live under $3 a day. Too fragile to absorb the next drought.",hl:["A10","A2"]},
+ {id:"A23",k:"5 · Unsafe WASH",h:"Water turns unsafe",d:"War and floods break water systems: linked to 1.4M deaths a year.",hl:["A23"]},
+ {id:"A19",k:"Where it lands",h:"Children carry the cost",d:"The only agent linked to all five, taking 11 harmful links. 150M children are stunted.",hl:["A19"]}
+];
+function runLoop(){
+  const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
+  ags.style("opacity",a=>LOOP.includes(a.id)||a.id==="A19"?1:[0.14,0.3,0.42,0.56,0.7,0.85][a.loopLinks]);
+  gSDG.attr("display","none"); gCore.attr("display",null);
+  gLinks.style("opacity",reduce?1:0); gCore.selectAll(".corecap").style("opacity",reduce?1:0);
+  const PHI=(1+Math.sqrt(5))/2;
+  function spiral(id){const a=A[id],r0=(R_SEG0+R_STEP[a.rank])/2,th0=a.ang,t=TGT[id],rt=Math.hypot(t[0],t[1]);let tht=Math.atan2(t[1],t[0])*180/Math.PI;
+    const golden=90*Math.log(r0/rt)/Math.log(PHI); let d=tht-th0; while(d<golden-180)d+=360; while(d>golden+180)d-=360;
+    return u=>{const th=th0+d*u, r=r0*Math.pow(rt/r0,u); return P(r,th);};}
+  explode(STORY,{onClick:storyStep});
+  showLoopPanel();
+  if(reduce){STORY.forEach((s,i)=>revealCard(i,0));return;}
+  toks.attr("transform",id=>`translate(${spiral(id)(0)})`).transition().delay((id,i)=>i*220).duration(2200).ease(d3.easeCubicInOut).attrTween("transform",id=>{const f=spiral(id);return u=>`translate(${f(u)})`;});
+  LOOP.forEach((id,i)=>{const f=spiral(id),pts=d3.range(0,1.001,0.02).map(f);
+    gShock.append("path").attr("d",d3.line()(pts)).attr("fill","none").attr("stroke",SDG[A[id].sdg].col).attr("stroke-width",2).attr("stroke-dasharray","3 5").attr("opacity",0)
+      .transition().delay(i*220).duration(400).attr("opacity",.8).transition().delay(2500).duration(800).attr("opacity",0).remove();});
+  gLinks.transition().delay(2500).duration(600).style("opacity",1);
+  gCore.selectAll(".corecap").transition().delay(2700).duration(600).style("opacity",1);
+  STORY.forEach((s,i)=>revealCard(i,3000+i*350));}
+function storyStep(i){st.story=i;const s=STORY[i];
+  focusCard(i);
+  toks.select(".tokring").attr("display",id=>s.hl.includes(id)?null:"none");
+  loopEls.forEach(e=>e.vis.style("opacity",(s.hl.includes(e.x)&&s.hl.includes(e.y))||(s.hl.length===1&&(e.x===s.id||e.y===s.id))?1:.25));
+  ags.classed("sel",a=>a.id===s.id);
+  document.querySelectorAll("[data-st]").forEach(b=>b.setAttribute("aria-pressed",+b.dataset.st===i?"true":"false"));}
+function showLoopPanel(){
+  const touch=AG.filter(a=>!LOOP.includes(a.id)&&a.loopLinks>0).length;
+  panel.innerHTML=`<div class="eyebrow">2 · The vicious cycle</div><h2>Five agents keep pulling the system back into hunger</h2>
+  <p>Armed conflict and Weather extremes are the engine: each makes the other worse. Food prices, Fragile states and Unsafe WASH each close a smaller loop with both of them, so a single shock comes back around.</p>
+  <h3>Why it matters</h3>
+  <div class="stat"><b>${touch} of 20</b><span>other agents link straight into the cycle. Only A12 Gender poverty gap and A21 Health costs don't.</span>
+  <b>51 of 58</b><span>interactions that touch a cycle agent are harmful (−1 or −2).</span>
+  <b>0 of 5</b><span>cycle agents were ranked +3. Ranking by how much research exists missed their role in the system.</span>
+  <b>11</b><span>harmful links land on Child undernutrition, more than on any other agent.</span></div>
+  <p><b>So what:</b> fixing one outer agent, such as more school meals, treats a symptom while the engine keeps turning. A strategy for SDG 02 has to work on conflict and climate shocks together, and protect the agents the cycle hits hardest.</p>
+  <h3>Smaller patterns that feed the cycle</h3><div class="chips">${["climate","fiscal","water","storage"].map(k=>`<button class="chip" data-pat="${k}" aria-pressed="false">${PATTERNS[k].name}</button>`).join("")}</div>
+  <div id="patd"></div>
+  <p class="note">Arrow direction is my reading of each interaction's rationale. Faded agents have fewer links into the cycle.</p>`;
+  const mb=document.getElementById("modebar");
+  mb.innerHTML=`<span class="hint">Walk through it</span>${STORY.map((s,i)=>`<button class="chip" data-st="${i}" aria-pressed="false">${s.k}</button>`).join("")}`;
+  mb.querySelectorAll("[data-st]").forEach(b=>b.onclick=()=>storyStep(+b.dataset.st));
+  bindGo();}
+function togglePattern(k,btn){const on=btn.getAttribute("aria-pressed")!=="true";
+  panel.querySelectorAll("[data-pat]").forEach(b=>b.setAttribute("aria-pressed","false"));
+  const box=document.getElementById("patd");
+  if(!on){clearFocus();if(box)box.innerHTML="";return;}
+  btn.setAttribute("aria-pressed","true");
+  const ls=LINKS.filter(l=>l.tag===k); const ids=new Set(); ls.forEach(l=>{ids.add(l.a);ids.add(l.b)});
+  ags.style("opacity",null); setFocus([...ids],d=>d.l&&d.l.tag===k);
+  if(box) box.innerHTML=`<p class="src" style="margin-top:8px">${PATTERNS[k].d}</p><ul class="conn">${ls.map(l=>`<li><div><span class="sw" style="background:${LV[l.s].col}"></span><span class="nm">${A[l.a].short} → ${A[l.b].short}${lvTag(l.s)}</span><span class="rt">${esc(l.txt)}</span></div></li>`).join("")}</ul>`;}
+
+// ---- pressure model ----
+function propagate(origin){
+  const p={},par={};AG.forEach(a=>p[a.id]=0); p[origin]=100;
+  for(let it=0;it<40;it++){let ch=false;for(const [u,v,w] of NEG){if(v===origin)continue;const c=p[u]*w;if(c>p[v]+1e-9){p[v]=c;par[v]=u;ch=true;}}if(!ch)break;}
+  const dist={};dist[origin]=0;const q=[origin];while(q.length){const x=q.shift();negNB[x].forEach(n=>{if(dist[n]===undefined){dist[n]=dist[x]+1;q.push(n);}});}
+  return {p,par,dist};}
+const heat=v=>v>=60?"var(--heat0)":v>=40?"var(--heat1)":v>=20?"var(--heat2)":v>0.5?"var(--heat3)":null;
+const WAVE=["var(--heat0)","var(--heat1)","var(--heat2)","var(--heat3)"], waveCol=d=>WAVE[Math.min(3,d)];
+function paintWave(R,visible){
+  ags.select(".segp").style("fill",a=>visible(a.id)?waveCol(R.dist[a.id]):"var(--soft)");
+  ags.select(".idt").attr("fill",a=>visible(a.id)?(R.dist[a.id]<=1?"#fff":"#1b1a14"):"var(--muted)");
+  ags.style("opacity",a=>visible(a.id)?1:0.4);}
+function paintPressure(p,visible){
+  ags.select(".segp").style("fill",a=>visible(a.id)&&heat(p[a.id])?heat(p[a.id]):"var(--soft)");
+  ags.select(".idt").attr("fill",a=>visible(a.id)&&p[a.id]>0.5?(p[a.id]>=40?"#fff":"#1b1a14"):"var(--muted)");
+  ags.style("opacity",a=>visible(a.id)&&p[a.id]>0.5?1:0.4);}
+const lvShort=v=>(v>0?"+":"−")+Math.abs(v)+" "+LV[v].n;
+const clip=(t,n)=>{t=String(t);if(t.length<=n)return t;const c=t.slice(0,n);return c.slice(0,c.lastIndexOf(" "))+"…";};
+
+// ---- Shock ----
+function showShockPanel(){
+  const opts=SDG_ORDER.map(s=>`<optgroup label="SDG ${s} ${SDG[s].name}">${AG.filter(a=>a.sdg===s).sort((x,y)=>x.pri-y.pri).map(a=>`<option value="${a.id}">${a.id} ${a.short}</option>`).join("")}</optgroup>`).join("");
+  panel.innerHTML=`<div class="eyebrow">3 · Shock</div><h2>Send a shock through the system</h2>
+  <p>Pick where a shock starts above, or click any agent on the wheel. It travels along the harmful links one step at a time, and the story of what it does explodes out to the right.</p>
+  <h3>What the colours mean</h3>
+  <ul class="conn">
+   <li><div><span class="sw" style="background:var(--heat0)"></span><span class="nm">Origin</span><span class="rt">Where the shock starts.</span></div></li>
+   <li><div><span class="sw" style="background:var(--heat1)"></span><span class="nm">First wave</span><span class="rt">Hit directly by the origin, in step 1.</span></div></li>
+   <li><div><span class="sw" style="background:var(--heat2)"></span><span class="nm">Second wave</span><span class="rt">Hit through one other agent, in step 2.</span></div></li>
+   <li><div><span class="sw" style="background:var(--heat3)"></span><span class="nm">Third wave</span><span class="rt">Hit through two other agents, in step 3.</span></div></li>
+   <li><div><span class="sw" style="background:var(--soft);outline:1px solid var(--line)"></span><span class="nm">Grey</span><span class="rt">Not reached yet.</span></div></li>
+  </ul>
+  <p class="src">The cards on the right and the step buttons above use the same colours. Pressure (0 to 100) says how hard an agent is hit; hover any agent to see it.</p>
+  <h3>Step by step</h3><div class="steps" id="sh-steps"></div>
+  <div id="sh-story"></div>
+  <p class="note">How it works: the shock starts at 100 pressure. A −2 link passes on 70% of an agent's pressure and a −1 link 35%; positive links don't pass it on. Each agent keeps the strongest pressure that reaches it. Harmful links carry pressure both ways because the matrix doesn't record direction for every effect. It's a way to compare shocks, not a forecast.</p>`;
+  document.getElementById("modebar").innerHTML=`<label class="hint" for="sh-o">Start at</label><select id="sh-o">${opts}</select><button class="btn" id="sh-play">Play again</button><span class="hint" style="margin-left:6px">Walk through it</span><div class="chips" id="sh-chips"></div>`;
+  const sel=document.getElementById("sh-o"); sel.value=st.shock.origin;
+  sel.onchange=()=>{st.shock.origin=sel.value;startShock();};
+  document.getElementById("sh-play").onclick=startShock;}
+function shockCards(R,origin){const o=A[origin],p=R.p,items=[];
+  const max=Math.max(...Object.values(R.dist));
+  items.push({id:origin,at:0,col:WAVE[0],set:[origin],k:"Where it starts",h:o.short,d:clip(o.find,88)});
+  const w1=AG.filter(a=>R.dist[a.id]===1).sort((x,y)=>p[y.id]-p[x.id]);
+  if(w1.length) items.push({id:w1[0].id,at:1,col:WAVE[1],set:w1.map(a=>a.id),k:`First wave · step 1`,h:`${w1.length} agents hit at once`,d:`Hardest hit: ${w1.slice(0,3).map(a=>a.short).join(", ")}.`});
+  const w2=AG.filter(a=>R.dist[a.id]>=2).sort((x,y)=>p[y.id]-p[x.id]);
+  const sdgs=new Set(AG.filter(a=>p[a.id]>0.5).map(a=>a.sdg)).size;
+  if(w2.length) items.push({id:w2[0].id,at:2,col:WAVE[2],set:w2.map(a=>a.id),k:`Then it spreads · step 2${max>2?"+":""}`,h:`${w2.length} more agents, ${sdgs} of 5 SDGs`,d:`Through ${A[R.par[w2[0].id]].short} to ${w2.slice(0,3).map(a=>a.short).join(", ")}.`});
+  if(origin!=="A19"&&R.dist.A19!==undefined){const via=R.par.A19,l=linkOf(via,"A19");
+    const chain=["A19"];let c="A19";while(R.par[c]){c=R.par[c];chain.push(c);}
+    items.push({id:"A19",at:R.dist.A19,col:waveCol(R.dist.A19),set:chain,k:"Where it lands",h:`Children at pressure ${Math.round(p.A19)}`,d:`Step ${R.dist.A19}, via ${A[via].short}: ${clip(l.txt,62)}`});}
+  const loopOthers=LOOP.filter(x=>x!==origin), hot=loopOthers.filter(x=>p[x]>=40).sort((x,y)=>p[y]-p[x]);
+  items.push({id:hot[0]||loopOthers[0],at:max,col:"var(--ink)",set:LOOP.slice(),k:"Inside the vicious cycle",h:`${hot.length} of ${loopOthers.length} cycle agents hit hard`,d:hot.length>=3?"Once inside, the cycle keeps the shock circulating.":"The cycle mostly stays out of this one."});
+  const cush=LINKS.filter(l=>l.s>0&&l.a!==origin&&p[l.b]>=40).sort((x,y)=>(y.b==="A19")-(x.b==="A19")||y.s-x.s||p[y.b]-p[x.b])[0];
+  if(cush) items.push({id:cush.a,at:max,col:LV[cush.s].col,set:[cush.a,cush.b],k:`What could soften it · ${lvShort(cush.s)}`,h:A[cush.a].short,d:`For ${A[cush.b].short}: ${clip(cush.txt,62)}`});
+  return items.slice(0,6);}
+function renderShockChips(){const box=document.getElementById("sh-chips");if(!box)return;
+  box.innerHTML=st.shock.items.map((it,i)=>`<button class="chip" data-sh="${i}" aria-pressed="${st.shock.focus===i}"><span class="sw" style="background:${it.col};display:inline-block;vertical-align:-1px;margin-right:6px"></span>${it.k.split(" · ")[0]}</button>`).join("")
+    +`<button class="chip" data-sh="-1" aria-pressed="${st.shock.focus==null}">Show all</button>`;
+  box.querySelectorAll("[data-sh]").forEach(b=>b.onclick=()=>shockStep(+b.dataset.sh));}
+function shockStep(i){clearTimers(); st.shock.step=st.shock.max; st.shock.focus=i<0?null:i; renderShock();
+  if(i<0&&EXP){EXP.lines.attr("stroke-width",4).attr("opacity",1);EXP.fo.style("opacity",1);}
+  renderShockChips();}
+function applyShockFocus(){const it=st.shock.items[st.shock.focus];if(!it)return;const set=new Set(it.set);
+  ags.style("opacity",a=>set.has(a.id)?1:0.13); ags.classed("sel",a=>a.id===it.id&&set.size===1);
+  focusCard(st.shock.focus); EXP&&EXP.fo.interrupt().style("opacity",g=>g.i===st.shock.focus?1:.4); EXP&&EXP.lines.interrupt().attr("stroke-dasharray",null).attr("stroke-dashoffset",null); EXP&&EXP.dots.interrupt().attr("opacity",1);}
+function startShock(){
+  if(!document.getElementById("sh-o")) showShockPanel();
+  document.getElementById("sh-o").value=st.shock.origin;
+  clearTimers(); resetPaint(); ags.classed("sel",false);
+  const R=propagate(st.shock.origin); st.shock.R=R; st.shock.max=Math.max(...Object.values(R.dist)); st.shock.step=0;
+  st.shock.focus=null; st.shock.items=shockCards(R,st.shock.origin); explode(st.shock.items,{onClick:shockStep}); renderShockChips();
+  renderShock(); writeShockStory();
+  if(matchMedia("(prefers-reduced-motion: reduce)").matches){st.shock.step=st.shock.max;renderShock();return;}
+  st.shock.timer=setInterval(()=>{st.shock.step++;renderShock();if(st.shock.step>=st.shock.max){clearInterval(st.shock.timer);st.shock.timer=null;}},1400);}
+function renderShock(){
+  const {R,step,max}=st.shock; gShock.selectAll("*").remove(); const box=document.getElementById("sh-steps");
+  const vis=id=>R.dist[id]!==undefined&&R.dist[id]<=step;
+  paintWave(R,vis);
+  const o=A[st.shock.origin],p=P(R_STEP[o.rank]+6,o.ang);
+  gShock.append("circle").attr("cx",p[0]).attr("cy",p[1]).attr("r",9).attr("fill","var(--heat0)").attr("stroke","var(--surface)").attr("stroke-width",3);
+  if(!matchMedia("(prefers-reduced-motion: reduce)").matches)
+    gShock.append("circle").attr("fill","none").attr("stroke","var(--heat0)").attr("stroke-width",3).attr("r",R_DISC).attr("opacity",.6).transition().duration(1200).attr("r",R_STEP[3]+40).attr("opacity",0).remove();
+  st.shock.items.forEach((it,i)=>{if(it.at<=step) revealCard(i,0);});
+  if(st.shock.focus!=null) applyShockFocus();
+  if(box){let h="";for(let k=0;k<=max;k++){const at=AG.filter(a=>R.dist[a.id]===k).sort((x,y)=>R.p[y.id]-R.p[x.id]);
+    h+=`<div class="steprow${k>step?" dim":""}"><span class="k">${k===0?"Origin":"Step "+k}</span><span class="sq">${at.map(a=>`<i title="${a.id} ${a.short}: pressure ${Math.round(R.p[a.id])}" style="background:${waveCol(k)};outline:2px solid ${SDG[a.sdg].col};outline-offset:-2px"></i>`).join("")}<span style="margin-left:6px;font-size:13px;color:var(--muted)">${at.length}</span></span></div>`;}
+    const un=AG.filter(a=>R.dist[a.id]===undefined);
+    if(un.length) h+=`<div class="steprow"><span class="k">Never</span><span class="sq" style="font-size:13px;color:var(--muted)">${un.map(a=>a.id).join(", ")}</span></div>`;
+    box.innerHTML=h;}}
+function writeShockStory(){const R=st.shock.R,o=A[st.shock.origin],p=R.p;
+  const hit=AG.filter(a=>a.id!==o.id&&p[a.id]>0.5), heavy=hit.filter(a=>p[a.id]>=40);
+  const w1=AG.filter(a=>R.dist[a.id]===1).sort((x,y)=>p[y.id]-p[x.id]);
+  const w2=AG.filter(a=>R.dist[a.id]>=2).sort((x,y)=>p[y.id]-p[x.id]);
+  const why=a=>{const l=linkOf(R.par[a.id],a.id);return l?l.txt:"";};
+  const sdgRows=SDG_ORDER.map(s=>{const ag=AG.filter(a=>a.sdg===s&&a.id!==o.id);const avg=ag.reduce((t,a)=>t+p[a.id],0)/ag.length;const n=ag.filter(a=>p[a.id]>=40).length;
+    return `<div class="cmp" style="padding:6px 0"><span>${sdgDot(s)}SDG ${s} ${SDG[s].name}</span><span class="v" style="font-size:15px">${n} of ${ag.length} heavy</span><span class="bars"><span><i style="width:${avg}%;background:${SDG[s].col}"></i></span></span></div>`;}).join("");
+  const children=o.id==="A19"?"The shock starts with children themselves.":R.dist.A19===undefined?"It never reaches Child undernutrition.":`Child undernutrition ends up at pressure ${Math.round(p.A19)} after ${R.dist.A19} step${R.dist.A19===1?"":"s"}.`;
+  document.getElementById("sh-story").innerHTML=`
+  <h3>In one line</h3>
+  <p class="verdict">A shock at ${o.id} ${esc(o.short)} reaches ${hit.length} of 24 agents and puts ${heavy.length} under heavy pressure. ${children}</p>
+  <h3>Across the SDGs</h3>${sdgRows}
+  <h3>First wave · ${w1.length} agents</h3>
+  <ul class="conn">${w1.map(a=>`<li><button data-go="${a.id}"><span class="sw" style="background:${waveCol(R.dist[a.id])}"></span><span class="nm">${a.id} ${esc(a.short)} · ${Math.round(p[a.id])}</span><span class="rt">${esc(why(a))}</span></button></li>`).join("")}</ul>
+  ${w2.length?`<h3>Then it spreads · ${w2.length} more agents</h3><ul class="conn">${w2.map(a=>`<li><button data-go="${a.id}"><span class="sw" style="background:${waveCol(R.dist[a.id])}"></span><span class="nm">${a.id} ${esc(a.short)} · ${Math.round(p[a.id])} <span class="src">via ${A[R.par[a.id]].short}</span></span><span class="rt">${esc(why(a))}</span></button></li>`).join("")}</ul>`:""}`;
+  bindGo();}
+
+
+// ---------- Turning points: responses to each implication ----------
+const TPC={pos:"#17666A",neg:"#C8402A"};
+const TP=[
+ {n:1,pos:true,chip:"Cold rooms",cat:"Accelerating progress · Direct synergy",title:"Cold storage stops harvests from rotting",
+  links:[["A27","A31"],["A27","A32"],["A27","A4"]],
+  imp:"Food rots between harvest and sale because farmers have nowhere cold to keep it,",res:"so local cold-storage businesses can rent shared solar cold rooms by the crate in busy food markets,",ins:"so that produce lasts weeks instead of days and spoiled food becomes income.",
+  data:["526M tonnes of food (12% of production) are lost each year for lack of refrigeration; sub-Saharan Africa loses 23% of its food after harvest (FAO & UNEP 2022; FAO).","Proof: ColdHubs, a Nigerian company, rents walk-in solar cold rooms in markets for about $0.50 per crate per day. Produce lasts about 3 weeks instead of 2 days, and early users reported nearly doubling their monthly income (IFPRI)."]},
+ {n:2,pos:true,chip:"School taps",cat:"Accelerating progress · Direct synergy",title:"Safe water helps food actually nourish children",
+  links:[["A15","A23"],["A15","A6"],["A15","A18"]],
+  imp:"Children who drink unsafe water can't absorb what they eat,",res:"so education ministries and water utilities can put taps and handwashing stations in schools first,",ins:"so that the meals 466 million children already get actually nourish them.",
+  data:["Unsafe water and sanitation are linked to 1.4M deaths a year (WHO); 2.1B people lack safely managed drinking water (WHO/UNICEF JMP).","466M children already get school meals every day, so the sites already exist (WFP, State of School Feeding 2024).","Women and girls are the main water collectors in most countries with data, often 30+ minutes a day (WHO/UNICEF JMP 2025)."]},
+ {n:3,pos:true,chip:"Solar pumps",cat:"Creating conditions · Enabling",title:"Irrigation makes farming reliable, if groundwater is protected",
+  links:[["A13","A3"],["A13","A4"],["A13","A2"],["A13","A14"]],
+  imp:"Irrigation steadies harvests, but free power tempts farmers to drain groundwater,",res:"so state power utilities can connect farmers' solar pumps to the grid and buy back the power they don't use,",ins:"so that farmers earn more by pumping less, protecting both the harvest and the aquifer.",
+  data:["Groundwater is falling in 71% of ~1,700 aquifers studied, fastest in dry, farmed regions (Jasechko et al., Nature 2024).","Proof: Gujarat's Dhundi cooperative and the state's Suryashakti Kisan Yojana connected 4,000+ farmers' solar pumps to the grid. They earned about $257 a year from selling power (about 43% of crop income) and used less power for pumping than their neighbours (CGIAR / IWMI).","Caveat: groundwater savings aren't measured directly yet."]},
+ {n:4,pos:true,chip:"Mothers screen",cat:"Creating conditions · Enabling",title:"Catching hunger early, when it's cheapest to treat",
+  links:[["A22","A19"],["A22","A23"]],
+  imp:"Malnutrition is caught too late because there aren't enough health workers,",res:"so community health programmes can teach mothers to check their own children with a colour-coded arm tape,",ins:"so that children are found earlier, fewer end up in hospital, and screening costs less than half as much.",
+  data:["WHO projects an 11.1M health-worker shortfall by 2030; 150.2M children under 5 are stunted (UNICEF/WHO/World Bank).","Proof: in Niger (2013–14), the medical NGO ALIMA found mothers caught malnutrition earlier than health workers: 2.3% of their children needed hospital care on admission against 9.0%, at a cost of $8,600 against $21,980."]},
+ {n:5,pos:true,chip:"Early cash",cat:"Affecting others · Multiplier",title:"Cash support strengthens the rest of the system",
+  links:[["A7","A4"],["A7","A12"],["A7","A19"],["A7","A21"],["A7","A2"]],
+  imp:"Help usually arrives after a drought, when families have already sold the animals and tools they live on,",res:"so governments can add a satellite drought trigger to the cash programmes they already run, with donors setting the money aside in advance,",ins:"so that payments reach more families automatically, before hunger peaks and before they sell their future income.",
+  data:["Only 52.4% of people have at least one social protection benefit (ILO 2024–26).","Proof (who pays): Kenya's Hunger Safety Net Programme is run by the government's drought authority with UK aid. A satellite vegetation index checked every 10 days triggers extra payments; in 2015 it reached 207,000+ extra households, paid within about two weeks.","Proof (why early): in Bangladesh in 2020, families paid about $53 two weeks before a flood peak sold no assets, against 12% of families who got nothing early (WFP)."]},
+ {n:6,pos:true,chip:"Local school food",cat:"Affecting others · Multiplier",title:"School meals do much more than feed children",
+  links:[["A6","A7"],["A6","A4"],["A6","A12"],["A6","A19"]],
+  imp:"Governments spend $84 billion a year on school food but rarely buy it from local farmers,",res:"so education ministries can reserve a share of school food contracts for local smallholders, especially women,",ins:"so that money that's already being spent becomes steady farm income and fresher meals.",
+  data:["466M children get school meals; 99% of the $84B a year comes from national budgets (WFP 2024).","Smallholders work about 12% of farmland yet grow roughly 35% of the world's food (FAO 2021).","Proof: Brazil's school meal law sends at least 30% of school food money to family farms (Law 11.947, 2009)."]},
+ {n:7,pos:false,chip:"Restore land together",cat:"Accelerating progress · Reversing a direct synergy",title:"War and climate disasters feed each other",
+  links:[["A2","A1"]],
+  imp:"Drought shrinks the land and water communities share, and the competition for it fuels violence,",res:"so governments and food agencies like WFP can pay farmers and herders to restore degraded land together, on the same crews,",ins:"so that the resource they fight over grows back and trust between them is rebuilt.",
+  data:["Conflict drives hunger for 295M people in 20 countries; weather extremes for 96M+ in 18 (GRFC 2025).","Proof: WFP's Sahel resilience programme (2018–23) restored 280,000+ hectares across 3,190 villages in 5 conflict-hit countries. In Niger's worst food crisis in a decade, 80% of these villages needed no emergency aid, and IFPRI found less mistrust between communities.","Caveat: a drop in violence itself isn't measured yet."]},
+ {n:8,pos:false,chip:"Clean water kit",cat:"Accelerating progress · Reversing a direct synergy",title:"Diarrhoea and malnutrition feed each other",
+  links:[["A23","A19"]],
+  imp:"Dirty water at home makes treated children sick again and slows their recovery,",res:"so nutrition clinics can treat the home, not just the child, sending every child in treatment home with a clean water kit (chlorine, soap and a covered container),",ins:"so that more children recover, and they recover faster.",
+  data:["150.2M children under 5 are stunted (UNICEF/WHO/World Bank); unsafe water and sanitation are linked to 1.4M deaths a year (WHO).","Proof: a trial in Chad with 1,603 children found the kit raised recovery rates by 10.5%, and children recovered 4.4 days faster (Action Against Hunger / ITG).","Caveat: it didn't reduce relapse months later."]},
+ {n:9,pos:false,chip:"Debt swaps",cat:"Creating conditions · Removing a blocker",title:"Debt payments crowd out food and health spending",
+  links:[["A9","A7"],["A9","A6"],["A9","A21"]],
+  imp:"Loan repayments leave poor countries little money for food and health,",res:"so finance ministries and their creditors can trade debt relief for locked-in nutrition spending, and add clauses that pause repayments after disasters,",ins:"so that the budget every other response depends on is freed up.",
+  data:["3.4B people live in countries that spend more on interest than on health or education; debt service reached $921B (UNCTAD 2025).","Proof (swap): in 2023 Ecuador bought back about $1.6B of debt for about $656M, committing about $323M to the Galápagos over 18.5 years.","Proof (pause): after Hurricane Beryl in 2024, Grenada became the first country to pause repayments under a hurricane clause, about $30M."]},
+ {n:10,pos:false,chip:"Redirect subsidies",cat:"Creating conditions · Removing a blocker",title:"Farm subsidies pay for the wrong things",
+  links:[["A28","A14"],["A28","A33"],["A28","A3"],["A28","A7"]],
+  imp:"$540 billion in subsidies pays farmers to overuse water and chemicals,",res:"so agriculture ministries can pay farmers for healthier soil and saved water instead,",ins:"so that farmers keep their support while the damage it causes ends.",
+  data:["$540B a year in producer support, 87% of it price-distorting (FAO, UNDP & UNEP 2021).","Only 46% of applied nitrogen reaches crops (Zhang et al., Nature Food 2021).","Proof: India's Soil Health Card scheme tests each farm's soil and tells farmers what it needs; a government study found fertiliser use fell about 8–10% (NPC)."]},
+ {n:11,pos:false,chip:"Drought insurance",cat:"Affecting others · Cutting a multiplier",title:"One drought spreads damage everywhere",
+  links:[["A2","A4"],["A2","A19"],["A2","A9"]],
+  imp:"One drought spreads to every part of the system within two steps,",res:"so governments and insurers can give farmers cover that pays out automatically when rainfall drops below a set level, and governments buy the same cover for their own budgets,",ins:"so that money reaches farmers, families and finance ministries before the damage turns into hunger and new debt.",
+  data:["Weather extremes were the main driver of hunger in 18 countries, affecting 96M+ people in 2024 (GRFC 2025).","Proof (farmers): in northern Kenya after the 2011 drought, herders whose livestock insurance paid out (about $150) were about a third less likely to expect to cut meals and about half as likely to expect to sell animals (UC Davis BASIS; early, survey-based results).","Proof (governments): Grenada's 2024 debt pause was triggered by an automatic $44M payout from the Caribbean's regional disaster insurer (CCRIF)."]},
+ {n:12,pos:false,chip:"Price-linked budgets",cat:"Affecting others · Cutting a multiplier",title:"Rising food prices hit the poorest first",
+  links:[["A3","A8"],["A3","A32"],["A3","A6"],["A3","A19"]],
+  imp:"When food prices spike, fixed budgets buy less exactly when families need more,",res:"so governments can link cash transfers and school meal budgets to local food prices,",ins:"so that families' buying power stays steady without creating a new programme.",
+  data:["Food prices were the main driver of hunger in 15 countries, affecting 59M+ people in 2024 (GRFC 2025).","2B workers (61% of the employed) work informally, without social protection to cushion a price spike (ILO).","70% of urban households in Africa regularly buy food from street vendors, so price shocks reach them first (IFPRI 2017)."]}
+];
+const T21="ending hunger for everyone (SDG Target 2.1)",T22="ending malnutrition in children (SDG Target 2.2)",T23="doubling the incomes of small-scale farmers (SDG Target 2.3)",T24D="farming that can withstand drought and extreme weather (SDG Target 2.4)",T24S="farming that's sustainable for the long run (SDG Target 2.4)";
+const OPP={
+1:["Market cold hubs","There is an opportunity to build a network of pay-per-crate solar cold rooms in informal food markets.","tonnes of produce saved from spoiling, and the income of farmers and vendors who use them.",[T23]],
+2:["Water-ready school meals","There is an opportunity to make safe water and handwashing a standard part of every school meal programme.","the share of meal-serving schools with safe water, and stunting and wasting rates among their pupils.",[T22]],
+3:["Pumps that pay","There is an opportunity to turn every grid-connected irrigation pump into a second income, so farmers earn by selling the power they don't use.","farm income and groundwater levels in participating districts.",[T23,"farming that doesn't drain its own water (SDG Target 2.4)"]],
+4:["Mother-led screening","There is an opportunity to put a colour-coded arm tape in every mother's hands in districts with high child malnutrition.","how many children are caught before they need hospital care, and local rates of wasting (children dangerously thin for their height).",[T22]],
+5:["Forecast-triggered safety nets","There is an opportunity to add satellite drought triggers to the cash programmes governments already run.","how many households are paid before hunger peaks, and how many avoid cutting meals or selling assets.",[T21]],
+6:["Home-grown school meals","There is an opportunity to steer a fixed share of the $84 billion a year spent on school food to local women farmers.","the share of school food bought locally, and the income of the farmers supplying it.",[T23,T22]],
+7:["Restore-together programmes","There is an opportunity to pay farming and herding communities to restore shared, degraded land where drought and conflict overlap.","hectares restored, and the share of villages that need no emergency aid in the hungry season.",[T24D,T21]],
+8:["Clean-home discharge kit","There is an opportunity to make a clean water kit a standard part of every child's discharge from malnutrition treatment.","recovery rates, and the number of days children take to recover.",[T22]],
+9:["Debt-for-nutrition swaps","There is an opportunity to trade debt relief for poor countries in exchange for protected budgets for school meals and cash support.","the money redirected into nutrition programmes, and the number of people they reach.",[T21,T22]],
+10:["Pay for soil, not sacks","There is an opportunity to redirect harmful farm subsidies into payments for healthier soil and water saved.","fertiliser used per hectare, groundwater levels, and harvests.",[T24S]],
+11:["Two-layer drought insurance","There is an opportunity to pair automatic-payout insurance for farmers with matching cover for government budgets.","how fast payouts arrive, and how many insured households avoid cutting meals.",[T24D,T21]],
+12:["Price-linked protection","There is an opportunity to tie cash transfers and school meal budgets to local food prices.","whether their real buying power holds steady during price spikes.",["keeping food prices from swinging wildly (SDG Target 2.c)",T21]]};
+TP.forEach(t=>{const o=OPP[t.n];t.chip=o[0];t.opp=o[1];t.meas=o[2];t.goal=o[3];});
+TP.forEach(t=>{
+  t.L=t.links.map(([x,y])=>linkOf(x,y)).filter(Boolean);
+  const set=[];t.links.forEach(([x,y])=>{if(!set.includes(x))set.push(x);if(!set.includes(y))set.push(y);});t.set=set;
+  t.col=t.pos?TPC.pos:TPC.neg;});
+function tpChips(){const g=(pos,lbl)=>`<div class="tpgrp"><span class="lbl">${lbl}</span>${TP.filter(t=>t.pos===pos).map(t=>`<button class="chip" data-tp="${TP.indexOf(t)}" aria-pressed="${TP.indexOf(t)===st.tp}"><span class="num" style="color:${st.tp===TP.indexOf(t)?"inherit":t.col}">${t.n}</span>${t.chip}</button>`).join("")}</div>`;
+  const mb=document.getElementById("modebar");
+  mb.innerHTML=g(true,"Build on")+g(false,"Turn around");
+  mb.querySelectorAll("[data-tp]").forEach(b=>b.onclick=()=>showTurn(+b.dataset.tp));}
+function tpOpp(t){return `<div class="opp" style="--c:${t.col}"><div class="ol">Strategic opportunity · ${esc(t.chip)}</div><p class="ot">${esc(t.opp)}</p><p class="om"><b>Measured by:</b> ${esc(t.meas)}</p><p class="om"><b>Moves the world closer to:</b> ${esc(t.goal.join(", and "))}.</p></div>`;}
+const cap=x=>x.charAt(0).toUpperCase()+x.slice(1);
+function tpSentence(t,cls){return `<p class="${cls}"><b>Implication</b>${esc(t.imp)}</p><p class="${cls}"><b>Response</b>${esc(t.res)}</p><p class="${cls}"><b>Strategic insight</b>${esc(t.ins)}</p>`;}
+function tpPanel(t){
+  panel.innerHTML=`<div class="eyebrow">4 · Turning points</div><h2>${t.n}. ${esc(t.title)}</h2>
+  <div class="tagrow"><span class="pill"><span class="sw" style="background:${t.col}"></span>${t.pos?"Positive · build on it":"Negative · turn it around"}</span></div>
+  <p class="src">${esc(t.cat)}</p>
+  ${tpOpp(t)}
+  <h3>The reasoning</h3>${tpSentence(t,"tsent")}
+  <h3>The research</h3><ul class="tdata">${t.data.map(d=>`<li>${esc(d)}</li>`).join("")}</ul>
+  <h3>Links it acts on</h3><ul class="conn">${t.L.map(l=>`<li><div><span class="sw" style="background:${LV[l.s].col}"></span><span class="nm">${esc(A[l.a].short)} → ${esc(A[l.b].short)}${lvTag(l.s)}</span><span class="rt">${esc(l.txt)}</span></div></li>`).join("")}</ul>
+  <h3>All twelve</h3><ul class="conn">${TP.map((x,i)=>`<li><button data-tpp="${i}"><span class="sw" style="background:${x.col}"></span><span class="nm">${x.n}. ${esc(x.chip)}</span><span class="rt">${esc(x.title)}</span></button></li>`).join("")}</ul>
+  <p class="note">Each turning point answers one implication from my Assignment 8 work: positive implications get a response that builds on them, negative ones a response that improves, reverses or removes them.</p>`;
+  panel.querySelectorAll("[data-tpp]").forEach(b=>b.onclick=()=>showTurn(+b.dataset.tpp));}
+function showTurn(i,quiet){st.tp=i;const t=TP[i];clearTimers();hideTip();
+  resetPaint(); const set=new Set(t.set), L=new Set(t.L);
+  ags.style("opacity",null); keepFocus(t.set,d=>d.l&&L.has(d.l)); ags.classed("sel",false);
+  gStory.selectAll("*").remove();
+  const fo=gStory.append("foreignObject").attr("x",CARD.x).attr("width",CARD.w).attr("y",-900).attr("height",1800);
+  const div=fo.append("xhtml:div").attr("class","tcard").style("border-color",t.col)
+    .html(`<div class="tnav"><button class="tprev" aria-label="Previous turning point">‹</button>${TP.map((x,j)=>`<button class="tnum${j===i?" on":""}" data-j="${j}" style="--c:${x.col}" aria-label="Turning point ${x.n}: ${esc(x.chip)}">${x.n}</button>`).join("")}<button class="tnext" aria-label="Next turning point">›</button></div><div class="h">${t.n}. ${esc(t.chip)}</div><div class="sub">Responds to ${t.pos?"a positive":"a negative"} implication: ${esc(t.title.charAt(0).toLowerCase()+t.title.slice(1))}</div><p class="ot" style="border-color:${t.col}">${esc(t.opp)}</p><div class="meta"><div><span class="ml">Measured by</span>${esc(cap(t.meas))}</div><div><span class="ml">Moves the world closer to</span>${esc(cap(t.goal.join(", and ")))}.</div></div><div class="secl">The reasoning</div>${tpSentence(t,"ln")}<button class="rtog" aria-expanded="${!!st.res}">${st.res?"Hide the research ▴":"Show the research ▾"}</button>${st.res?`<ul class="rlist">${t.data.map(d=>`<li>${esc(d)}</li>`).join("")}</ul>`:""}`);
+  div.select(".rtog").on("click",e=>{e.stopPropagation();st.res=!st.res;showTurn(i,true);});
+  div.selectAll(".tnum").on("click",function(e){e.stopPropagation();showTurn(+this.dataset.j);});
+  div.select(".tprev").on("click",e=>{e.stopPropagation();showTurn((i+TP.length-1)%TP.length);});
+  div.select(".tnext").on("click",e=>{e.stopPropagation();showTurn((i+1)%TP.length);});
+  const hgt=Math.min(1800,div.node().offsetHeight||1400), top=-hgt/2; fo.attr("y",top).attr("height",hgt+4);
+  const ids=t.set.slice().sort((x,y)=>Math.sin(rad(A[x].ang))-Math.sin(rad(A[y].ang)));
+  const n=ids.length, span=Math.min(hgt-160,n*44), yA=top+90;
+  const G=ids.map((id,k)=>{const a=A[id];const y=yA+(n>1?k*span/(n-1):span/2);const lr=labR(a),R=Math.max(800+k*14,lr+26),p0=P(lr,a.ang),p1=P(R,a.ang);
+    const th=Math.asin(Math.max(-0.98,Math.min(0.98,y/R)))*180/Math.PI,end=P(R,th);let d=th-a.ang;while(d>180)d-=360;while(d<-180)d+=360;
+    return {k,p0,path:`M${p0[0]},${p0[1]}L${p1[0]},${p1[1]}A${R},${R} 0 0 ${d>0?1:0} ${end[0]},${end[1]}L${CARD.x},${y}`};});
+  const reduce=quiet||matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const ln=gStory.insert("g","foreignObject").selectAll("path").data(G).join("path").attr("class","exl").attr("d",g=>g.path).style("stroke",t.col).attr("stroke-width",3.5).attr("opacity",.85);
+  gStory.selectAll("circle.exdot").data(G).join("circle").attr("class","exdot").attr("cx",g=>g.p0[0]).attr("cy",g=>g.p0[1]).attr("r",9).style("fill",t.col);
+  if(!reduce){ln.each(function(){const Lg=this.getTotalLength();d3.select(this).attr("stroke-dasharray",Lg).attr("stroke-dashoffset",Lg).transition().duration(900).ease(d3.easeCubicInOut).attr("stroke-dashoffset",0).on("end",function(){d3.select(this).attr("stroke-dasharray",null)});});
+    fo.style("opacity",0).transition().delay(450).duration(450).style("opacity",1);}
+  tpChips(); tpPanel(t);}
+function runTurn(){showTurn(st.tp||0);}
+document.addEventListener("keydown",e=>{if(st.mode!=="turn"||/INPUT|SELECT|TEXTAREA/.test((e.target.tagName||"")))return;
+  if(e.key==="ArrowRight"){e.preventDefault();showTurn((st.tp+1)%TP.length);} if(e.key==="ArrowLeft"){e.preventDefault();showTurn((st.tp+TP.length-1)%TP.length);}});
+
+// ---------- insights ----------
+const missing=AG.filter(a=>!a.pillars).map(a=>a.id);
+const negN=LINKS.filter(l=>l.s<0).length;
+const INS=[
+ {big:`${negN}/121`,t:"Most interactions make hunger worse",d:"Only 27 interactions help; the rest constrain or counteract another agent.",go:()=>{setMode("explore");const ids=new Set();LINKS.forEach(l=>{if(l.s<0){ids.add(l.a);ids.add(l.b);}});keepFocus([...ids],d=>d.l&&d.l.s<0);}},
+ {big:"18/20",t:"The vicious cycle reaches almost everything",d:"18 of the 20 other agents link straight into the five cycle agents.",go:()=>setMode("loop")},
+ {big:"11",t:"Children take the most harm",d:"Child undernutrition receives 11 harmful links, more than any other agent.",go:()=>{setMode("explore");keepFocus(["A19",...NB.A19],d=>d.l&&d.l.b==="A19"&&d.l.s<0);showAgent("A19");}},
+ {big:"15",t:"Weather extremes spreads the most harm",d:"15 harmful links go out from it, reaching all five SDGs.",go:()=>{setMode("shock");st.shock.origin="A2";startShock();}},
+ {big:"7",t:"Social protection is the best cushion",d:"It has more positive links than any other agent.",go:()=>{setMode("explore");agentClick("A7");}},
+ {big:"3",t:"Only three +3 interactions",d:"School meals ↔ Social protection, Water utilities → Unsafe WASH, Cold chain → Post-harvest loss.",go:()=>{setMode("explore");keepFocus(["A6","A7","A15","A23","A27","A31"],d=>d.l&&d.l.s===3);showDefault();}},
+ {big:"0/5",t:"Rank and role don't match",d:"None of the five cycle agents was ranked +3.",go:()=>{setMode("explore");keepFocus(LOOP,d=>d.l&&LOOP.includes(d.l.a)&&LOOP.includes(d.l.b));showDefault();}},
+ {big:"16/25",t:"Agents covering all three pillars",d:"The nine that don't are run by budgets, law and markets.",go:()=>{setMode("explore");keepFocus(missing,null);showDefault();}}
+];
+const cardsEl=document.getElementById("cards");
+cardsEl.innerHTML=INS.map((x,i)=>`<button class="card" data-i="${i}" aria-pressed="false"><span class="big">${x.big}</span><span class="t">${x.t}</span><span class="d">${x.d}</span></button>`).join("");
+cardsEl.querySelectorAll(".card").forEach(c=>c.onclick=()=>{INS[+c.dataset.i].go();cardsEl.querySelectorAll(".card").forEach(x=>x.setAttribute("aria-pressed",x===c?"true":"false"));
+  document.querySelector(".stage").scrollIntoView({behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth",block:"start"});});
+
+// ---------- go ----------
+ags.select(".segp").attr("fill",a=>SDG[a.sdg].col); ags.select(".idt").attr("fill",a=>SDG[a.sdg].dk?"#1b1a14":"#fff");
+renderLegend(); showDefault();
+})();
+</script>
+
+</body>
+</html>
